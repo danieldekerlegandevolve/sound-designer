@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -12,6 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useProjectStore } from '../../store/projectStore';
+import { validateConnection } from '../../utils/ConnectionValidator';
 import { DSPNodeComponent } from './DSPNodeComponent';
 import { DSPPropertiesPanel } from './DSPPropertiesPanel';
 import './DSPDesigner.css';
@@ -22,6 +23,7 @@ const nodeTypes = {
 
 export function DSPDesigner() {
   const { project, addConnection, deleteConnection, updateDSPNode } = useProjectStore();
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Convert DSP graph to React Flow format
   const initialNodes: Node[] = project.dspGraph.nodes.map((node) => ({
@@ -48,6 +50,29 @@ export function DSPDesigner() {
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
 
+      // Find source and target nodes
+      const sourceNode = project.dspGraph.nodes.find((n) => n.id === connection.source);
+      const targetNode = project.dspGraph.nodes.find((n) => n.id === connection.target);
+
+      if (!sourceNode || !targetNode) return;
+
+      // Validate connection
+      const validation = validateConnection(
+        sourceNode,
+        targetNode,
+        connection.sourceHandle || 'output',
+        connection.targetHandle || 'input',
+        project.dspGraph.connections
+      );
+
+      if (!validation.isValid) {
+        setValidationError(validation.error || 'Invalid connection');
+        setTimeout(() => setValidationError(null), 3000);
+        return;
+      }
+
+      setValidationError(null);
+
       addConnection({
         sourceNodeId: connection.source,
         sourcePort: connection.sourceHandle || 'output',
@@ -66,7 +91,7 @@ export function DSPDesigner() {
         )
       );
     },
-    [addConnection, setEdges]
+    [addConnection, setEdges, project.dspGraph]
   );
 
   const onNodeDragStop = useCallback(
@@ -90,6 +115,11 @@ export function DSPDesigner() {
 
   return (
     <div className="dsp-designer">
+      {validationError && (
+        <div className="validation-error">
+          {validationError}
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}

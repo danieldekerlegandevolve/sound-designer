@@ -17,6 +17,7 @@ interface ProjectState {
   project: PluginProject;
   selectedMode: EditorMode;
   selectedUIComponent: string | null;
+  selectedUIComponents: string[];
   selectedDSPNode: string | null;
   isDirty: boolean;
   currentFilePath: string | null;
@@ -33,6 +34,11 @@ interface ProjectState {
   updateUIComponent: (id: string, updates: Partial<UIComponent>) => void;
   deleteUIComponent: (id: string) => void;
   selectUIComponent: (id: string | null) => void;
+  toggleUIComponentSelection: (id: string) => void;
+  selectMultipleUIComponents: (ids: string[]) => void;
+  clearUISelection: () => void;
+  groupSelectedComponents: () => void;
+  deleteSelectedComponents: () => void;
   copyUIComponent: (id: string) => void;
   pasteUIComponent: () => void;
 
@@ -99,6 +105,7 @@ export const useProjectStore = create<ProjectState>()(
     project: defaultProject,
     selectedMode: 'ui',
     selectedUIComponent: null,
+    selectedUIComponents: [],
     selectedDSPNode: null,
     isDirty: false,
     currentFilePath: null,
@@ -186,6 +193,75 @@ export const useProjectStore = create<ProjectState>()(
           y: uiComponentClipboard!.y + 20,
         };
         state.project.uiComponents.push(newComponent);
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
+
+    toggleUIComponentSelection: (id) => {
+      set((state) => {
+        const index = state.selectedUIComponents.indexOf(id);
+        if (index === -1) {
+          state.selectedUIComponents.push(id);
+        } else {
+          state.selectedUIComponents.splice(index, 1);
+        }
+      });
+    },
+
+    selectMultipleUIComponents: (ids) => {
+      set({ selectedUIComponents: ids, selectedUIComponent: null });
+    },
+
+    clearUISelection: () => {
+      set({ selectedUIComponents: [], selectedUIComponent: null });
+    },
+
+    groupSelectedComponents: () => {
+      const { project, selectedUIComponents } = get();
+      if (selectedUIComponents.length < 2) return;
+
+      historyManager.push(project, 'Group components');
+      set((state) => {
+        // Find bounding box of selected components
+        const components = state.project.uiComponents.filter((c) =>
+          selectedUIComponents.includes(c.id)
+        );
+
+        const minX = Math.min(...components.map((c) => c.x));
+        const minY = Math.min(...components.map((c) => c.y));
+        const maxX = Math.max(...components.map((c) => c.x + c.width));
+        const maxY = Math.max(...components.map((c) => c.y + c.height));
+
+        // Update positions relative to group
+        components.forEach((comp) => {
+          const index = state.project.uiComponents.findIndex((c) => c.id === comp.id);
+          if (index !== -1) {
+            state.project.uiComponents[index].groupId = nanoid();
+            state.project.uiComponents[index].groupX = comp.x - minX;
+            state.project.uiComponents[index].groupY = comp.y - minY;
+          }
+        });
+
+        state.selectedUIComponents = [];
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
+
+    deleteSelectedComponents: () => {
+      const { project, selectedUIComponents } = get();
+      if (selectedUIComponents.length === 0) return;
+
+      historyManager.push(project, `Delete ${selectedUIComponents.length} components`);
+      set((state) => {
+        state.project.uiComponents = state.project.uiComponents.filter(
+          (c) => !selectedUIComponents.includes(c.id)
+        );
+        state.selectedUIComponents = [];
+        state.selectedUIComponent = null;
         state.isDirty = true;
         state.canUndo = historyManager.canUndo();
         state.canRedo = historyManager.canRedo();

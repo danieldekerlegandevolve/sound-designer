@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { SettingsDialog } from './SettingsDialog';
 import {
   LayoutDashboard,
   GitBranch,
@@ -38,6 +39,7 @@ export function Toolbar() {
 
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const modes = [
     { id: 'ui' as const, label: 'UI Designer', icon: LayoutDashboard },
@@ -190,10 +192,16 @@ export function Toolbar() {
           )}
         </div>
 
-        <button className="toolbar-btn" title="Settings">
+        <button
+          className="toolbar-btn"
+          onClick={() => setShowSettings(true)}
+          title="Settings"
+        >
           <Settings size={18} />
         </button>
       </div>
+
+      <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

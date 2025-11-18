@@ -10,9 +10,14 @@ export function UIDesigner() {
   const {
     project,
     selectedUIComponent,
+    selectedUIComponents,
     selectUIComponent,
+    toggleUIComponentSelection,
+    selectMultipleUIComponents,
+    clearUISelection,
     updateUIComponent,
     deleteUIComponent,
+    deleteSelectedComponents,
   } = useProjectStore();
 
   const { gridSize, snapToGrid, gridEnabled } = useSettingsStore();
@@ -20,6 +25,8 @@ export function UIDesigner() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizing, setResizing] = useState<string | null>(null);
+  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
 
   // Snap to grid helper
   const snap = (value: number): number => {
@@ -48,7 +55,12 @@ export function UIDesigner() {
       });
     }
 
-    selectUIComponent(component.id);
+    // Handle multi-selection with Ctrl/Cmd key
+    if (e.ctrlKey || e.metaKey) {
+      toggleUIComponentSelection(component.id);
+    } else {
+      selectUIComponent(component.id);
+    }
     e.stopPropagation();
   };
 
@@ -67,23 +79,71 @@ export function UIDesigner() {
       const width = snap(Math.max(20, e.clientX - rect.left - component.x));
       const height = snap(Math.max(20, e.clientY - rect.top - component.y));
       updateUIComponent(resizing, { width, height });
+    } else if (selectionStart) {
+      // Update selection box
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
+      const x = Math.min(selectionStart.x, currentX);
+      const y = Math.min(selectionStart.y, currentY);
+      const width = Math.abs(currentX - selectionStart.x);
+      const height = Math.abs(currentY - selectionStart.y);
+      setSelectionBox({ x, y, width, height });
     }
   };
 
   const handleMouseUp = () => {
+    // Complete selection box
+    if (selectionBox && selectionStart) {
+      const selected = project.uiComponents
+        .filter((comp) => {
+          const compRight = comp.x + comp.width;
+          const compBottom = comp.y + comp.height;
+          const boxRight = selectionBox.x + selectionBox.width;
+          const boxBottom = selectionBox.y + selectionBox.height;
+
+          return !(
+            comp.x > boxRight ||
+            compRight < selectionBox.x ||
+            comp.y > boxBottom ||
+            compBottom < selectionBox.y
+          );
+        })
+        .map((c) => c.id);
+
+      if (selected.length > 0) {
+        selectMultipleUIComponents(selected);
+      }
+    }
+
     setDragging(null);
     setResizing(null);
+    setSelectionBox(null);
+    setSelectionStart(null);
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current) {
-      selectUIComponent(null);
+      if (!(e.ctrlKey || e.metaKey)) {
+        clearUISelection();
+      }
+
+      // Start selection box
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setSelectionStart({ x, y });
+      }
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedUIComponent) {
-      deleteUIComponent(selectedUIComponent);
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedUIComponents.length > 0) {
+        deleteSelectedComponents();
+      } else if (selectedUIComponent) {
+        deleteUIComponent(selectedUIComponent);
+      }
     }
   };
 
@@ -112,27 +172,46 @@ export function UIDesigner() {
         onMouseLeave={handleMouseUp}
         onClick={handleCanvasClick}
       >
-        {project.uiComponents.map((component) => (
-          <div
-            key={component.id}
-            className={`ui-component ${selectedUIComponent === component.id ? 'selected' : ''}`}
-            style={{
-              left: component.x,
-              top: component.y,
-              width: component.width,
-              height: component.height,
-              ...component.style,
-            }}
-            onMouseDown={(e) => handleMouseDown(e, component)}
-          >
-            <div className="component-content">
-              {renderComponent(component)}
+        {project.uiComponents.map((component) => {
+          const isSelected =
+            selectedUIComponent === component.id ||
+            selectedUIComponents.includes(component.id);
+
+          return (
+            <div
+              key={component.id}
+              className={`ui-component ${isSelected ? 'selected' : ''}`}
+              style={{
+                left: component.x,
+                top: component.y,
+                width: component.width,
+                height: component.height,
+                ...component.style,
+              }}
+              onMouseDown={(e) => handleMouseDown(e, component)}
+            >
+              <div className="component-content">
+                {renderComponent(component)}
+              </div>
+              {isSelected && (
+                <div className="resize-handle" />
+              )}
             </div>
-            {selectedUIComponent === component.id && (
-              <div className="resize-handle" />
-            )}
-          </div>
-        ))}
+          );
+        })}
+
+        {/* Selection box */}
+        {selectionBox && (
+          <div
+            className="selection-box"
+            style={{
+              left: selectionBox.x,
+              top: selectionBox.y,
+              width: selectionBox.width,
+              height: selectionBox.height,
+            }}
+          />
+        )}
       </div>
       <PropertiesPanel />
     </div>

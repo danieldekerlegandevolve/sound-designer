@@ -243,3 +243,11 @@
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
+
+.selection-box {
+  position: absolute;
+  border: 2px dashed var(--accent-blue);
+  background-color: rgba(74, 158, 255, 0.1);
+  pointer-events: none;
+  z-index: 100;
+}
