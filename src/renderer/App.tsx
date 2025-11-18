@@ -6,6 +6,7 @@ import { UIDesigner } from './modules/ui-designer/UIDesigner';
 import { DSPDesigner } from './modules/dsp-designer/DSPDesigner';
 import { CodeEditor } from './modules/code-editor/CodeEditor';
 import { Preview } from './modules/preview/Preview';
+import { KeyboardShortcuts } from './utils/KeyboardShortcuts';
 import './App.css';
 
 export function App() {
@@ -28,6 +29,7 @@ export function App() {
 
   return (
     <div className="app">
+      <KeyboardShortcuts />
       <Toolbar />
       <div className="app-content">
         <Sidebar />

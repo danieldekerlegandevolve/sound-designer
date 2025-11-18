@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
+import { HistoryManager } from '../utils/HistoryManager';
 import type {
   PluginProject,
   UIComponent,
@@ -8,6 +9,9 @@ import type {
   DSPConnection,
   EditorMode,
 } from '@shared/types';
+
+// Create global history manager
+const historyManager = new HistoryManager(50);
 
 interface ProjectState {
   project: PluginProject;
@@ -17,6 +21,8 @@ interface ProjectState {
   isDirty: boolean;
   currentFilePath: string | null;
   autoSaveEnabled: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 
   // Actions
   setMode: (mode: EditorMode) => void;
@@ -27,6 +33,8 @@ interface ProjectState {
   updateUIComponent: (id: string, updates: Partial<UIComponent>) => void;
   deleteUIComponent: (id: string) => void;
   selectUIComponent: (id: string | null) => void;
+  copyUIComponent: (id: string) => void;
+  pasteUIComponent: () => void;
 
   // DSP Designer actions
   addDSPNode: (node: Omit<DSPNode, 'id'>) => void;
@@ -35,9 +43,16 @@ interface ProjectState {
   selectDSPNode: (id: string | null) => void;
   addConnection: (connection: Omit<DSPConnection, 'id'>) => void;
   deleteConnection: (id: string) => void;
+  copyDSPNode: (id: string) => void;
+  pasteDSPNode: () => void;
 
   // Code actions
   updateCode: (type: 'dsp' | 'ui' | 'helpers', code: string) => void;
+
+  // History actions
+  undo: () => void;
+  redo: () => void;
+  pushHistory: (description: string) => void;
 
   // Project actions
   saveProject: (filePath?: string) => Promise<void>;
@@ -48,6 +63,10 @@ interface ProjectState {
   importFromJSON: () => Promise<void>;
   setAutoSave: (enabled: boolean) => void;
 }
+
+// Clipboard for copy/paste
+let uiComponentClipboard: UIComponent | null = null;
+let dspNodeClipboard: DSPNode | null = null;
 
 const defaultProject: PluginProject = {
   id: nanoid(),
@@ -84,6 +103,8 @@ export const useProjectStore = create<ProjectState>()(
     isDirty: false,
     currentFilePath: null,
     autoSaveEnabled: true,
+    canUndo: false,
+    canRedo: false,
 
     setMode: (mode) => set({ selectedMode: mode }),
 
@@ -93,82 +114,229 @@ export const useProjectStore = create<ProjectState>()(
     }),
 
     // UI Designer actions
-    addUIComponent: (component) => set((state) => {
-      const newComponent = { ...component, id: nanoid() };
-      state.project.uiComponents.push(newComponent);
-      state.isDirty = true;
-    }),
-
-    updateUIComponent: (id, updates) => set((state) => {
-      const index = state.project.uiComponents.findIndex((c) => c.id === id);
-      if (index !== -1) {
-        state.project.uiComponents[index] = {
-          ...state.project.uiComponents[index],
-          ...updates,
-        };
+    addUIComponent: (component) => {
+      const { project } = get();
+      historyManager.push(project, `Add ${component.type} component`);
+      set((state) => {
+        const newComponent = { ...component, id: nanoid() };
+        state.project.uiComponents.push(newComponent);
         state.isDirty = true;
-      }
-    }),
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
-    deleteUIComponent: (id) => set((state) => {
-      state.project.uiComponents = state.project.uiComponents.filter((c) => c.id !== id);
-      if (state.selectedUIComponent === id) {
-        state.selectedUIComponent = null;
+    updateUIComponent: (id, updates) => {
+      const { project } = get();
+      const comp = project.uiComponents.find((c) => c.id === id);
+      if (comp && Object.keys(updates).some((key) => key !== 'x' && key !== 'y')) {
+        // Only push history for non-position updates (to avoid history spam during drag)
+        historyManager.push(project, `Update ${comp.type} component`);
       }
-      state.isDirty = true;
-    }),
+      set((state) => {
+        const index = state.project.uiComponents.findIndex((c) => c.id === id);
+        if (index !== -1) {
+          state.project.uiComponents[index] = {
+            ...state.project.uiComponents[index],
+            ...updates,
+          };
+          state.isDirty = true;
+          state.canUndo = historyManager.canUndo();
+          state.canRedo = historyManager.canRedo();
+        }
+      });
+    },
+
+    deleteUIComponent: (id) => {
+      const { project } = get();
+      const comp = project.uiComponents.find((c) => c.id === id);
+      if (comp) {
+        historyManager.push(project, `Delete ${comp.type} component`);
+      }
+      set((state) => {
+        state.project.uiComponents = state.project.uiComponents.filter((c) => c.id !== id);
+        if (state.selectedUIComponent === id) {
+          state.selectedUIComponent = null;
+        }
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
     selectUIComponent: (id) => set({ selectedUIComponent: id }),
 
-    // DSP Designer actions
-    addDSPNode: (node) => set((state) => {
-      const newNode = { ...node, id: nanoid() };
-      state.project.dspGraph.nodes.push(newNode);
-      state.isDirty = true;
-    }),
+    copyUIComponent: (id) => {
+      const { project } = get();
+      const component = project.uiComponents.find((c) => c.id === id);
+      if (component) {
+        uiComponentClipboard = JSON.parse(JSON.stringify(component));
+      }
+    },
 
-    updateDSPNode: (id, updates) => set((state) => {
-      const index = state.project.dspGraph.nodes.findIndex((n) => n.id === id);
-      if (index !== -1) {
-        state.project.dspGraph.nodes[index] = {
-          ...state.project.dspGraph.nodes[index],
-          ...updates,
+    pasteUIComponent: () => {
+      if (!uiComponentClipboard) return;
+      const { project } = get();
+      historyManager.push(project, `Paste ${uiComponentClipboard.type} component`);
+      set((state) => {
+        const newComponent = {
+          ...uiComponentClipboard!,
+          id: nanoid(),
+          x: uiComponentClipboard!.x + 20,
+          y: uiComponentClipboard!.y + 20,
         };
+        state.project.uiComponents.push(newComponent);
         state.isDirty = true;
-      }
-    }),
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
-    deleteDSPNode: (id) => set((state) => {
-      state.project.dspGraph.nodes = state.project.dspGraph.nodes.filter((n) => n.id !== id);
-      state.project.dspGraph.connections = state.project.dspGraph.connections.filter(
-        (c) => c.sourceNodeId !== id && c.targetNodeId !== id
-      );
-      if (state.selectedDSPNode === id) {
-        state.selectedDSPNode = null;
+    // DSP Designer actions
+    addDSPNode: (node) => {
+      const { project } = get();
+      historyManager.push(project, `Add ${node.type} node`);
+      set((state) => {
+        const newNode = { ...node, id: nanoid() };
+        state.project.dspGraph.nodes.push(newNode);
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
+
+    updateDSPNode: (id, updates) => {
+      const { project } = get();
+      const node = project.dspGraph.nodes.find((n) => n.id === id);
+      if (node && Object.keys(updates).some((key) => key !== 'x' && key !== 'y')) {
+        historyManager.push(project, `Update ${node.type} node`);
       }
-      state.isDirty = true;
-    }),
+      set((state) => {
+        const index = state.project.dspGraph.nodes.findIndex((n) => n.id === id);
+        if (index !== -1) {
+          state.project.dspGraph.nodes[index] = {
+            ...state.project.dspGraph.nodes[index],
+            ...updates,
+          };
+          state.isDirty = true;
+          state.canUndo = historyManager.canUndo();
+          state.canRedo = historyManager.canRedo();
+        }
+      });
+    },
+
+    deleteDSPNode: (id) => {
+      const { project } = get();
+      const node = project.dspGraph.nodes.find((n) => n.id === id);
+      if (node) {
+        historyManager.push(project, `Delete ${node.type} node`);
+      }
+      set((state) => {
+        state.project.dspGraph.nodes = state.project.dspGraph.nodes.filter((n) => n.id !== id);
+        state.project.dspGraph.connections = state.project.dspGraph.connections.filter(
+          (c) => c.sourceNodeId !== id && c.targetNodeId !== id
+        );
+        if (state.selectedDSPNode === id) {
+          state.selectedDSPNode = null;
+        }
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
     selectDSPNode: (id) => set({ selectedDSPNode: id }),
 
-    addConnection: (connection) => set((state) => {
-      const newConnection = { ...connection, id: nanoid() };
-      state.project.dspGraph.connections.push(newConnection);
-      state.isDirty = true;
-    }),
+    addConnection: (connection) => {
+      const { project } = get();
+      historyManager.push(project, 'Add connection');
+      set((state) => {
+        const newConnection = { ...connection, id: nanoid() };
+        state.project.dspGraph.connections.push(newConnection);
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
-    deleteConnection: (id) => set((state) => {
-      state.project.dspGraph.connections = state.project.dspGraph.connections.filter(
-        (c) => c.id !== id
-      );
-      state.isDirty = true;
-    }),
+    deleteConnection: (id) => {
+      const { project } = get();
+      historyManager.push(project, 'Delete connection');
+      set((state) => {
+        state.project.dspGraph.connections = state.project.dspGraph.connections.filter(
+          (c) => c.id !== id
+        );
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
+
+    copyDSPNode: (id) => {
+      const { project } = get();
+      const node = project.dspGraph.nodes.find((n) => n.id === id);
+      if (node) {
+        dspNodeClipboard = JSON.parse(JSON.stringify(node));
+      }
+    },
+
+    pasteDSPNode: () => {
+      if (!dspNodeClipboard) return;
+      const { project } = get();
+      historyManager.push(project, `Paste ${dspNodeClipboard.type} node`);
+      set((state) => {
+        const newNode = {
+          ...dspNodeClipboard!,
+          id: nanoid(),
+          x: dspNodeClipboard!.x + 50,
+          y: dspNodeClipboard!.y + 50,
+        };
+        state.project.dspGraph.nodes.push(newNode);
+        state.isDirty = true;
+        state.canUndo = historyManager.canUndo();
+        state.canRedo = historyManager.canRedo();
+      });
+    },
 
     // Code actions
     updateCode: (type, code) => set((state) => {
       state.project.code[type] = code;
       state.isDirty = true;
     }),
+
+    // History actions
+    undo: () => {
+      const previousState = historyManager.undo();
+      if (previousState) {
+        set((state) => {
+          state.project = previousState;
+          state.isDirty = true;
+          state.canUndo = historyManager.canUndo();
+          state.canRedo = historyManager.canRedo();
+        });
+      }
+    },
+
+    redo: () => {
+      const nextState = historyManager.redo();
+      if (nextState) {
+        set((state) => {
+          state.project = nextState;
+          state.isDirty = true;
+          state.canUndo = historyManager.canUndo();
+          state.canRedo = historyManager.canRedo();
+        });
+      }
+    },
+
+    pushHistory: (description) => {
+      const { project } = get();
+      historyManager.push(project, description);
+      set({
+        canUndo: historyManager.canUndo(),
+        canRedo: historyManager.canRedo(),
+      });
+    },
 
     // Project actions
     saveProject: async (filePath?) => {

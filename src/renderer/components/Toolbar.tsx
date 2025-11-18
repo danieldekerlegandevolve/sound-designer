@@ -13,6 +13,8 @@ import {
   Upload,
   Download,
   ChevronDown,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import './Toolbar.css';
 
@@ -28,6 +30,10 @@ export function Toolbar() {
     exportAsJSON,
     importFromJSON,
     isDirty,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   } = useProjectStore();
 
   const [showFileMenu, setShowFileMenu] = useState(false);
@@ -67,6 +73,26 @@ export function Toolbar() {
       </div>
 
       <div className="toolbar-section toolbar-right">
+        {/* Undo/Redo */}
+        <button
+          className="toolbar-btn"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2 size={18} />
+        </button>
+        <button
+          className="toolbar-btn"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          <Redo2 size={18} />
+        </button>
+
+        <div className="toolbar-divider" />
+
         {/* File Menu */}
         <div className="menu-container">
           <button

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { PropertiesPanel } from './PropertiesPanel';
 import { UIComponent } from '@shared/types';
 import './UIDesigner.css';
@@ -14,9 +15,17 @@ export function UIDesigner() {
     deleteUIComponent,
   } = useProjectStore();
 
+  const { gridSize, snapToGrid, gridEnabled } = useSettingsStore();
+
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizing, setResizing] = useState<string | null>(null);
+
+  // Snap to grid helper
+  const snap = (value: number): number => {
+    if (!snapToGrid) return value;
+    return Math.round(value / gridSize) * gridSize;
+  };
 
   const handleMouseDown = (e: React.MouseEvent, component: UIComponent) => {
     if (e.button !== 0) return;
@@ -48,15 +57,15 @@ export function UIDesigner() {
     if (!rect) return;
 
     if (dragging) {
-      const x = e.clientX - rect.left - dragOffset.x;
-      const y = e.clientY - rect.top - dragOffset.y;
+      const x = snap(e.clientX - rect.left - dragOffset.x);
+      const y = snap(e.clientY - rect.top - dragOffset.y);
       updateUIComponent(dragging, { x, y });
     } else if (resizing) {
       const component = project.uiComponents.find((c) => c.id === resizing);
       if (!component) return;
 
-      const width = Math.max(20, e.clientX - rect.left - component.x);
-      const height = Math.max(20, e.clientY - rect.top - component.y);
+      const width = snap(Math.max(20, e.clientX - rect.left - component.x));
+      const height = snap(Math.max(20, e.clientY - rect.top - component.y));
       updateUIComponent(resizing, { width, height });
     }
   };
@@ -87,11 +96,16 @@ export function UIDesigner() {
     <div className="ui-designer">
       <div
         ref={canvasRef}
-        className="canvas"
+        className={`canvas ${gridEnabled ? 'grid-enabled' : ''}`}
         style={{
           width: project.settings.width,
           height: project.settings.height,
           backgroundColor: project.settings.backgroundColor,
+          backgroundImage: gridEnabled
+            ? `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+               linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`
+            : 'none',
+          backgroundSize: gridEnabled ? `${gridSize}px ${gridSize}px` : 'auto',
         }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

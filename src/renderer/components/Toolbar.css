@@ -91,6 +91,17 @@
   color: var(--accent-orange);
 }
 
+.toolbar-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-color);
+}
+
 .menu-container {
   position: relative;
 }
