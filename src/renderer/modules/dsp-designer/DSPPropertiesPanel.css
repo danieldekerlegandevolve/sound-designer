@@ -1,0 +1,80 @@
+.dsp-properties-panel {
+  width: 300px;
+  background-color: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.add-btn {
+  padding: 4px 8px;
+  background-color: var(--accent-blue);
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.add-btn:hover {
+  background-color: #3a8ee6;
+}
+
+.empty-state-small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.parameters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.parameter-item {
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.parameter-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.param-name-input {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.delete-param-btn {
+  width: 24px;
+  height: 24px;
+  background-color: rgba(255, 0, 0, 0.1);
+  color: #ef4444;
+  border-radius: 4px;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.delete-param-btn:hover {
+  background-color: rgba(255, 0, 0, 0.2);
+}

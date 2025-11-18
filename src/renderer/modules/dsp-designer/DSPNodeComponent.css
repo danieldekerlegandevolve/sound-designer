@@ -1,0 +1,93 @@
+.dsp-node {
+  min-width: 180px;
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.dsp-node.selected {
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+.node-header {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+
+.node-type {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.node-delete-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dsp-node:hover .node-delete-btn {
+  opacity: 1;
+}
+
+.node-delete-btn:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.node-body {
+  padding: 12px;
+  background-color: var(--bg-tertiary);
+}
+
+.node-parameters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-parameter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.param-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.param-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.param-more {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.node-empty {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-style: italic;
+}

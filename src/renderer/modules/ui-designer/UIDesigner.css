@@ -1,0 +1,245 @@
+.ui-designer {
+  display: flex;
+  height: 100%;
+  background-color: #1a1a1a;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas {
+  flex: 1;
+  position: relative;
+  margin: 40px auto;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  overflow: hidden;
+}
+
+.ui-component {
+  position: absolute;
+  border: 2px solid transparent;
+  cursor: move;
+  transition: border-color 0.2s;
+  user-select: none;
+}
+
+.ui-component:hover {
+  border-color: rgba(74, 158, 255, 0.3);
+}
+
+.ui-component.selected {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
+.component-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--accent-blue);
+  border: 2px solid white;
+  border-radius: 2px;
+  cursor: nwse-resize;
+}
+
+/* Component styles */
+.knob-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.knob-circle {
+  width: 60%;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+  border-radius: 50%;
+  border: 3px solid #4a4a4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.knob-indicator {
+  position: absolute;
+  top: 10%;
+  width: 3px;
+  height: 40%;
+  background-color: var(--accent-blue);
+  border-radius: 2px;
+  transform-origin: center 180%;
+  transform: rotate(-45deg);
+}
+
+.knob-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.slider-component {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.slider-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.slider-track {
+  flex: 1;
+  background-color: #3a3a3a;
+  border-radius: 3px;
+  position: relative;
+  height: 6px;
+  min-height: 6px;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background-color: var(--accent-blue);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.button-component {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #3a3a3a, #2a2a2a);
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toggle-component {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  background-color: #3a3a3a;
+  border-radius: 11px;
+  position: relative;
+  border: 1px solid #4a4a4a;
+}
+
+.toggle-handle {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #6a6a6a;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.display-component {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.display-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  color: var(--accent-green);
+}
+
+.display-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.waveform-component {
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 4px;
+  color: var(--accent-green);
+}
+
+.keyboard-component {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+  padding: 4px;
+}
+
+.key {
+  flex: 1;
+  background: linear-gradient(180deg, #f0f0f0, #d0d0d0);
+  border: 1px solid #999;
+  border-radius: 0 0 3px 3px;
+}
+
+.xypad-component {
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  position: relative;
+}
+
+.xypad-point {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background-color: var(--accent-blue);
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
