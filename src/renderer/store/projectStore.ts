@@ -15,6 +15,8 @@ interface ProjectState {
   selectedUIComponent: string | null;
   selectedDSPNode: string | null;
   isDirty: boolean;
+  currentFilePath: string | null;
+  autoSaveEnabled: boolean;
 
   // Actions
   setMode: (mode: EditorMode) => void;
@@ -38,9 +40,13 @@ interface ProjectState {
   updateCode: (type: 'dsp' | 'ui' | 'helpers', code: string) => void;
 
   // Project actions
-  saveProject: () => Promise<void>;
-  loadProject: (path: string) => Promise<void>;
+  saveProject: (filePath?: string) => Promise<void>;
+  saveProjectAs: () => Promise<void>;
+  loadProject: (filePath?: string) => Promise<void>;
   newProject: () => void;
+  exportAsJSON: () => Promise<void>;
+  importFromJSON: () => Promise<void>;
+  setAutoSave: (enabled: boolean) => void;
 }
 
 const defaultProject: PluginProject = {
@@ -76,6 +82,8 @@ export const useProjectStore = create<ProjectState>()(
     selectedUIComponent: null,
     selectedDSPNode: null,
     isDirty: false,
+    currentFilePath: null,
+    autoSaveEnabled: true,
 
     setMode: (mode) => set({ selectedMode: mode }),
 
@@ -163,19 +171,38 @@ export const useProjectStore = create<ProjectState>()(
     }),
 
     // Project actions
-    saveProject: async () => {
-      const { project } = get();
+    saveProject: async (filePath?) => {
+      const { project, currentFilePath } = get();
       if (window.electronAPI) {
-        await window.electronAPI.saveProject(project);
-        set({ isDirty: false });
+        const result = await window.electronAPI.saveProject(
+          project,
+          filePath || currentFilePath || undefined
+        );
+        if (result.success) {
+          set({ isDirty: false, currentFilePath: result.path || null });
+        }
       }
     },
 
-    loadProject: async (path) => {
+    saveProjectAs: async () => {
+      const { project } = get();
       if (window.electronAPI) {
-        const result = await window.electronAPI.loadProject(path);
+        const result = await window.electronAPI.saveProject(project);
         if (result.success) {
-          set({ project: result.data, isDirty: false });
+          set({ isDirty: false, currentFilePath: result.path || null });
+        }
+      }
+    },
+
+    loadProject: async (filePath?) => {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.loadProject(filePath);
+        if (result.success && result.data) {
+          set({
+            project: result.data,
+            isDirty: false,
+            currentFilePath: result.path || null,
+          });
         }
       }
     },
@@ -185,6 +212,29 @@ export const useProjectStore = create<ProjectState>()(
       selectedUIComponent: null,
       selectedDSPNode: null,
       isDirty: false,
+      currentFilePath: null,
     }),
+
+    exportAsJSON: async () => {
+      const { project } = get();
+      if (window.electronAPI) {
+        await window.electronAPI.exportProjectJSON(project);
+      }
+    },
+
+    importFromJSON: async () => {
+      if (window.electronAPI) {
+        const result = await window.electronAPI.importProjectJSON();
+        if (result.success && result.data) {
+          set({
+            project: result.data,
+            isDirty: true,
+            currentFilePath: null,
+          });
+        }
+      }
+    },
+
+    setAutoSave: (enabled) => set({ autoSaveEnabled: enabled }),
   }))
 );

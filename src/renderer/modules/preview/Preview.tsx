@@ -1,67 +1,72 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
-import { Play, Square, Volume2, Settings } from 'lucide-react';
+import { audioEngine } from '../../audio/AudioEngine';
+import { Play, Square, Volume2, Settings, RefreshCw } from 'lucide-react';
 import './Preview.css';
 
 export function Preview() {
   const { project } = useProjectStore();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const [waveformData, setWaveformData] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
-    // Initialize Web Audio API
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Initialize audio engine
+    const init = async () => {
+      await audioEngine.initialize();
+      await loadProjectIntoEngine();
+    };
+    init();
 
     return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      audioEngine.stop();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, []);
 
-  const handlePlayPause = () => {
-    if (!audioContextRef.current) return;
+  useEffect(() => {
+    // Reload project when it changes
+    if (project) {
+      loadProjectIntoEngine();
+    }
+  }, [project.dspGraph]);
 
-    if (isPlaying) {
-      // Stop audio
-      setIsPlaying(false);
-    } else {
-      // Start audio processing
-      setIsPlaying(true);
-      startAudioProcessing();
+  const loadProjectIntoEngine = async () => {
+    setIsLoading(true);
+    try {
+      await audioEngine.loadProject(project);
+    } catch (error) {
+      console.error('Failed to load project:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const startAudioProcessing = () => {
-    if (!audioContextRef.current) return;
-
-    const ctx = audioContextRef.current;
-
-    // Create a simple oscillator as demo
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.frequency.value = 440;
-    oscillator.type = 'sine';
-    gainNode.gain.value = volume;
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    oscillator.start();
-
-    // Generate waveform data for visualization
-    const data = Array.from({ length: 100 }, (_, i) =>
-      Math.sin((i / 100) * Math.PI * 2) * 50
-    );
-    setWaveformData(data);
-
-    setTimeout(() => {
-      oscillator.stop();
+  const handlePlayPause = async () => {
+    if (isPlaying) {
+      audioEngine.stop();
       setIsPlaying(false);
-    }, 2000);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    } else {
+      await audioEngine.start();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    audioEngine.setMasterVolume(newVolume);
+  };
+
+  const handleReload = async () => {
+    audioEngine.stop();
+    setIsPlaying(false);
+    await loadProjectIntoEngine();
   };
 
   return (
@@ -114,28 +119,16 @@ export function Preview() {
             </div>
           ))}
 
-          {/* Waveform visualization */}
-          {isPlaying && waveformData.length > 0 && (
-            <div className="waveform-overlay">
-              <svg width="100%" height="100">
-                <path
-                  d={`M ${waveformData.map((v, i) => `${(i / waveformData.length) * 100},${50 + v}`).join(' L ')}`}
-                  stroke="rgba(74, 158, 255, 0.5)"
-                  fill="none"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          )}
         </div>
 
         <div className="preview-controls">
           <button
-            className={`play-button ${isPlaying ? 'playing' : ''}`}
+            className={`play-button ${isPlaying ? 'playing' : ''} ${isLoading ? 'loading' : ''}`}
             onClick={handlePlayPause}
+            disabled={isLoading}
           >
             {isPlaying ? <Square size={20} /> : <Play size={20} />}
-            {isPlaying ? 'Stop' : 'Play'}
+            {isPlaying ? 'Stop' : isLoading ? 'Loading...' : 'Play'}
           </button>
 
           <div className="volume-control">
@@ -146,15 +139,20 @@ export function Preview() {
               max="1"
               step="0.01"
               value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
+              onChange={(e) => handleVolumeChange(Number(e.target.value))}
               className="volume-slider"
             />
             <span className="volume-value">{Math.round(volume * 100)}%</span>
           </div>
 
+          <button className="reload-button" onClick={handleReload} title="Reload DSP Graph">
+            <RefreshCw size={18} />
+            Reload
+          </button>
+
           <button className="settings-button">
             <Settings size={18} />
-            Audio Settings
+            Settings
           </button>
         </div>
 

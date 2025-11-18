@@ -84,6 +84,34 @@
   background-color: var(--accent-orange);
 }
 
+.play-button.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.play-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.reload-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.reload-button:hover {
+  background-color: #3a3a3a;
+  border-color: var(--accent-blue);
+}
+
 .volume-control {
   display: flex;
   align-items: center;

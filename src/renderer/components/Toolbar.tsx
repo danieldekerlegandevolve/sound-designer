@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import {
   LayoutDashboard,
@@ -9,11 +9,29 @@ import {
   FolderOpen,
   FileDown,
   Settings,
+  FilePlus,
+  Upload,
+  Download,
+  ChevronDown,
 } from 'lucide-react';
 import './Toolbar.css';
 
 export function Toolbar() {
-  const { selectedMode, setMode, project, saveProject, isDirty } = useProjectStore();
+  const {
+    selectedMode,
+    setMode,
+    project,
+    saveProject,
+    saveProjectAs,
+    loadProject,
+    newProject,
+    exportAsJSON,
+    importFromJSON,
+    isDirty,
+  } = useProjectStore();
+
+  const [showFileMenu, setShowFileMenu] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const modes = [
     { id: 'ui' as const, label: 'UI Designer', icon: LayoutDashboard },
@@ -49,19 +67,103 @@ export function Toolbar() {
       </div>
 
       <div className="toolbar-section toolbar-right">
-        <button className="toolbar-btn" title="Open Project">
-          <FolderOpen size={18} />
-        </button>
+        {/* File Menu */}
+        <div className="menu-container">
+          <button
+            className="toolbar-btn menu-btn"
+            onClick={() => setShowFileMenu(!showFileMenu)}
+            title="File Menu"
+          >
+            <FolderOpen size={18} />
+            <ChevronDown size={14} />
+          </button>
+          {showFileMenu && (
+            <>
+              <div
+                className="menu-overlay"
+                onClick={() => setShowFileMenu(false)}
+              />
+              <div className="dropdown-menu">
+                <button className="menu-item" onClick={() => { newProject(); setShowFileMenu(false); }}>
+                  <FilePlus size={16} />
+                  <span>New Project</span>
+                </button>
+                <button className="menu-item" onClick={() => { loadProject(); setShowFileMenu(false); }}>
+                  <FolderOpen size={16} />
+                  <span>Open Project...</span>
+                </button>
+                <div className="menu-divider" />
+                <button className="menu-item" onClick={() => { saveProject(); setShowFileMenu(false); }}>
+                  <Save size={16} />
+                  <span>Save</span>
+                  <span className="menu-shortcut">Ctrl+S</span>
+                </button>
+                <button className="menu-item" onClick={() => { saveProjectAs(); setShowFileMenu(false); }}>
+                  <Save size={16} />
+                  <span>Save As...</span>
+                  <span className="menu-shortcut">Ctrl+Shift+S</span>
+                </button>
+                <div className="menu-divider" />
+                <button className="menu-item" onClick={() => { importFromJSON(); setShowFileMenu(false); }}>
+                  <Upload size={16} />
+                  <span>Import JSON...</span>
+                </button>
+                <button className="menu-item" onClick={() => { exportAsJSON(); setShowFileMenu(false); }}>
+                  <Download size={16} />
+                  <span>Export JSON...</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Quick Save */}
         <button
-          className="toolbar-btn"
+          className={`toolbar-btn ${isDirty ? 'highlight' : ''}`}
           onClick={saveProject}
-          title="Save Project"
+          title="Save Project (Ctrl+S)"
         >
           <Save size={18} />
         </button>
-        <button className="toolbar-btn" title="Export Plugin">
-          <FileDown size={18} />
-        </button>
+
+        {/* Export Menu */}
+        <div className="menu-container">
+          <button
+            className="toolbar-btn menu-btn"
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            title="Export"
+          >
+            <FileDown size={18} />
+            <ChevronDown size={14} />
+          </button>
+          {showExportMenu && (
+            <>
+              <div
+                className="menu-overlay"
+                onClick={() => setShowExportMenu(false)}
+              />
+              <div className="dropdown-menu">
+                <button className="menu-item">
+                  <FileDown size={16} />
+                  <span>Export as VST3...</span>
+                </button>
+                <button className="menu-item">
+                  <FileDown size={16} />
+                  <span>Export as AU...</span>
+                </button>
+                <button className="menu-item">
+                  <FileDown size={16} />
+                  <span>Export as Web App...</span>
+                </button>
+                <button className="menu-item">
+                  <FileDown size={16} />
+                  <span>Export as Standalone...</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
         <button className="toolbar-btn" title="Settings">
           <Settings size={18} />
         </button>

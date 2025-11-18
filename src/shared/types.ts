@@ -10,6 +10,16 @@ export interface PluginProject {
   dspGraph: DSPGraph;
   code: CodeFiles;
   settings: PluginSettings;
+  metadata?: ProjectMetadata;
+}
+
+export interface ProjectMetadata {
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  application: string;
+  isTemplate?: boolean;
+  filePath?: string;
 }
 
 export interface UIComponent {

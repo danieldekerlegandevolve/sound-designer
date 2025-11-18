@@ -86,3 +86,72 @@
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
 }
+
+.toolbar-btn.highlight {
+  color: var(--accent-orange);
+}
+
+.menu-container {
+  position: relative;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  z-index: 999;
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.menu-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.menu-item span:first-of-type {
+  flex: 1;
+}
+
+.menu-shortcut {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 6px 0;
+}
