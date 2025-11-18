@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { SettingsDialog } from './SettingsDialog';
+import { TemplateBrowser } from './TemplateBrowser';
 import {
   LayoutDashboard,
   GitBranch,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   Undo2,
   Redo2,
+  FileText,
 } from 'lucide-react';
 import './Toolbar.css';
 
@@ -40,6 +42,7 @@ export function Toolbar() {
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
 
   const modes = [
     { id: 'ui' as const, label: 'UI Designer', icon: LayoutDashboard },
@@ -114,8 +117,13 @@ export function Toolbar() {
               <div className="dropdown-menu">
                 <button className="menu-item" onClick={() => { newProject(); setShowFileMenu(false); }}>
                   <FilePlus size={16} />
-                  <span>New Project</span>
+                  <span>New Blank Project</span>
                 </button>
+                <button className="menu-item" onClick={() => { setShowTemplateBrowser(true); setShowFileMenu(false); }}>
+                  <FileText size={16} />
+                  <span>New from Template...</span>
+                </button>
+                <div className="menu-divider" />
                 <button className="menu-item" onClick={() => { loadProject(); setShowFileMenu(false); }}>
                   <FolderOpen size={16} />
                   <span>Open Project...</span>
@@ -202,6 +210,7 @@ export function Toolbar() {
       </div>
 
       <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <TemplateBrowser isOpen={showTemplateBrowser} onClose={() => setShowTemplateBrowser(false)} />
     </div>
   );
 }

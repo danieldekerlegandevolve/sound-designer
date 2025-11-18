@@ -134,6 +134,146 @@ export const builtInPresets: NodePreset[] = [
       { id: 'amount', name: 'amount', type: 'float', min: 0, max: 100, default: 80, value: 80 },
     ],
   },
+
+  // Reverb Presets
+  {
+    id: 'reverb-room',
+    name: 'Room Reverb',
+    nodeType: 'reverb',
+    description: 'Small room ambience',
+    category: 'effect',
+    parameters: [
+      { id: 'roomSize', name: 'room size', type: 'float', min: 0, max: 1, default: 0.3, value: 0.3 },
+      { id: 'damping', name: 'damping', type: 'float', min: 0, max: 1, default: 0.5, value: 0.5 },
+      { id: 'width', name: 'width', type: 'float', min: 0, max: 1, default: 1, value: 1 },
+      { id: 'wet', name: 'wet', type: 'float', min: 0, max: 1, default: 0.2, value: 0.2 },
+    ],
+  },
+  {
+    id: 'reverb-hall',
+    name: 'Hall Reverb',
+    nodeType: 'reverb',
+    description: 'Large hall space',
+    category: 'effect',
+    parameters: [
+      { id: 'roomSize', name: 'room size', type: 'float', min: 0, max: 1, default: 0.8, value: 0.8 },
+      { id: 'damping', name: 'damping', type: 'float', min: 0, max: 1, default: 0.3, value: 0.3 },
+      { id: 'width', name: 'width', type: 'float', min: 0, max: 1, default: 1, value: 1 },
+      { id: 'wet', name: 'wet', type: 'float', min: 0, max: 1, default: 0.4, value: 0.4 },
+    ],
+  },
+
+  // Chorus Presets
+  {
+    id: 'chorus-subtle',
+    name: 'Subtle Chorus',
+    nodeType: 'chorus',
+    description: 'Light chorus effect',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 1.5, value: 1.5, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.3, value: 0.3 },
+      { id: 'delay', name: 'delay', type: 'float', min: 1, max: 50, default: 20, value: 20, unit: 'ms' },
+      { id: 'feedback', name: 'feedback', type: 'float', min: 0, max: 1, default: 0.2, value: 0.2 },
+    ],
+  },
+  {
+    id: 'chorus-wide',
+    name: 'Wide Chorus',
+    nodeType: 'chorus',
+    description: 'Lush stereo chorus',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 0.5, value: 0.5, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.6, value: 0.6 },
+      { id: 'delay', name: 'delay', type: 'float', min: 1, max: 50, default: 30, value: 30, unit: 'ms' },
+      { id: 'feedback', name: 'feedback', type: 'float', min: 0, max: 1, default: 0.4, value: 0.4 },
+    ],
+  },
+
+  // Flanger Presets
+  {
+    id: 'flanger-classic',
+    name: 'Classic Flanger',
+    nodeType: 'flanger',
+    description: 'Vintage flanger effect',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 0.25, value: 0.25, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.5, value: 0.5 },
+      { id: 'delay', name: 'delay', type: 'float', min: 0.1, max: 10, default: 2, value: 2, unit: 'ms' },
+      { id: 'feedback', name: 'feedback', type: 'float', min: -1, max: 1, default: 0.7, value: 0.7 },
+    ],
+  },
+  {
+    id: 'flanger-jet',
+    name: 'Jet Flanger',
+    nodeType: 'flanger',
+    description: 'Extreme jet plane effect',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 2, value: 2, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.9, value: 0.9 },
+      { id: 'delay', name: 'delay', type: 'float', min: 0.1, max: 10, default: 1, value: 1, unit: 'ms' },
+      { id: 'feedback', name: 'feedback', type: 'float', min: -1, max: 1, default: 0.9, value: 0.9 },
+    ],
+  },
+
+  // Phaser Presets
+  {
+    id: 'phaser-smooth',
+    name: 'Smooth Phaser',
+    nodeType: 'phaser',
+    description: 'Smooth phasing effect',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 0.5, value: 0.5, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.5, value: 0.5 },
+      { id: 'stages', name: 'stages', type: 'int', min: 2, max: 12, default: 4, value: 4 },
+      { id: 'feedback', name: 'feedback', type: 'float', min: 0, max: 1, default: 0.5, value: 0.5 },
+    ],
+  },
+  {
+    id: 'phaser-intense',
+    name: 'Intense Phaser',
+    nodeType: 'phaser',
+    description: 'Deep phasing effect',
+    category: 'effect',
+    parameters: [
+      { id: 'rate', name: 'rate', type: 'float', min: 0.1, max: 10, default: 1.5, value: 1.5, unit: 'Hz' },
+      { id: 'depth', name: 'depth', type: 'float', min: 0, max: 1, default: 0.8, value: 0.8 },
+      { id: 'stages', name: 'stages', type: 'int', min: 2, max: 12, default: 8, value: 8 },
+      { id: 'feedback', name: 'feedback', type: 'float', min: 0, max: 1, default: 0.7, value: 0.7 },
+    ],
+  },
+
+  // Vocoder Presets
+  {
+    id: 'vocoder-classic',
+    name: 'Classic Vocoder',
+    nodeType: 'vocoder',
+    description: 'Robotic voice effect',
+    category: 'effect',
+    parameters: [
+      { id: 'bands', name: 'bands', type: 'int', min: 4, max: 32, default: 16, value: 16 },
+      { id: 'emphasis', name: 'emphasis', type: 'float', min: 0, max: 10, default: 2, value: 2 },
+      { id: 'attack', name: 'attack', type: 'float', min: 0.001, max: 0.1, default: 0.005, value: 0.005, unit: 's' },
+      { id: 'release', name: 'release', type: 'float', min: 0.001, max: 0.5, default: 0.05, value: 0.05, unit: 's' },
+    ],
+  },
+  {
+    id: 'vocoder-vintage',
+    name: 'Vintage Vocoder',
+    nodeType: 'vocoder',
+    description: 'Retro vocoder sound',
+    category: 'effect',
+    parameters: [
+      { id: 'bands', name: 'bands', type: 'int', min: 4, max: 32, default: 8, value: 8 },
+      { id: 'emphasis', name: 'emphasis', type: 'float', min: 0, max: 10, default: 5, value: 5 },
+      { id: 'attack', name: 'attack', type: 'float', min: 0.001, max: 0.1, default: 0.01, value: 0.01, unit: 's' },
+      { id: 'release', name: 'release', type: 'float', min: 0.001, max: 0.5, default: 0.1, value: 0.1, unit: 's' },
+    ],
+  },
 ];
 
 // Preset storage (localStorage)

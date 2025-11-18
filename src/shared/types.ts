@@ -53,12 +53,14 @@ export interface DSPGraph {
 export interface DSPNode {
   id: string;
   type: 'oscillator' | 'filter' | 'envelope' | 'lfo' | 'gain' | 'delay' | 'reverb' |
-        'distortion' | 'compressor' | 'eq' | 'mixer' | 'custom';
+        'distortion' | 'compressor' | 'eq' | 'mixer' | 'chorus' | 'flanger' | 'phaser' |
+        'vocoder' | 'input' | 'output' | 'custom';
   x: number;
   y: number;
   parameters: DSPParameter[];
   inputs: string[]; // Input port IDs
   outputs: string[]; // Output port IDs
+  label?: string; // Optional display label
 }
 
 export interface DSPParameter {
