@@ -1,39 +1,65 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { PluginProject, ExportConfig } from '@shared/types';
+import { validateProjectForExport, generateValidationReport } from './exportValidation';
+import { generateEnhancedProcessorHeader, generateEnhancedProcessorImplementation, generateCMakeFile } from './enhancedJUCEExport';
+import { generateWebAudioPlugin } from './webAudioExport';
 
 export async function exportPlugin(config: {
   project: PluginProject;
   config: ExportConfig;
-}): Promise<{ outputPath: string }> {
+}): Promise<{ outputPath: string; validationReport?: string }> {
   const { project, config: exportConfig } = config;
+
+  // Validate project before export
+  const validation = validateProjectForExport(project);
+  const validationReport = generateValidationReport(validation);
+
+  if (!validation.isValid) {
+    throw new Error(`Export validation failed:\n${validationReport}`);
+  }
 
   // Create output directory
   const outputDir = exportConfig.outputPath;
   await fs.mkdir(outputDir, { recursive: true });
 
+  // Write validation report
+  await fs.writeFile(
+    path.join(outputDir, 'VALIDATION_REPORT.md'),
+    validationReport,
+    'utf-8'
+  );
+
   // Generate based on format
+  let result;
   switch (exportConfig.format) {
     case 'vst':
     case 'vst3':
     case 'au':
-      return await exportNativePlugin(project, exportConfig, outputDir);
+      result = await exportNativePlugin(project, exportConfig, outputDir);
+      break;
 
     case 'web':
-      return await exportWebPlugin(project, exportConfig, outputDir);
+      result = await exportWebPlugin(project, exportConfig, outputDir);
+      break;
 
     case 'standalone':
-      return await exportStandaloneApp(project, exportConfig, outputDir);
+      result = await exportStandaloneApp(project, exportConfig, outputDir);
+      break;
 
     case 'mobile':
-      return await exportMobilePlugin(project, exportConfig, outputDir);
+      result = await exportMobilePlugin(project, exportConfig, outputDir);
+      break;
 
     case 'hardware':
-      return await exportHardwareDSP(project, exportConfig, outputDir);
+      result = await exportHardwareDSP(project, exportConfig, outputDir);
+      break;
 
     default:
       throw new Error(`Unsupported export format: ${exportConfig.format}`);
   }
+
+  return { ...result, validationReport };
 }
 
 // Export native plugin (VST/VST3/AU) using JUCE
@@ -42,7 +68,7 @@ async function exportNativePlugin(
   config: ExportConfig,
   outputDir: string
 ): Promise<{ outputPath: string }> {
-  // Generate JUCE project
+  // Generate JUCE project using enhanced generator
   const juceProject = generateJUCEProject(project, config);
 
   // Write JUCE project files
@@ -53,14 +79,18 @@ async function exportNativePlugin(
   const srcDir = path.join(outputDir, 'Source');
   await fs.mkdir(srcDir, { recursive: true });
 
+  // Use enhanced code generation
+  const processorHeader = generateEnhancedProcessorHeader(project);
+  const processorImpl = generateEnhancedProcessorImplementation(project);
+
   await fs.writeFile(
     path.join(srcDir, 'PluginProcessor.h'),
-    juceProject.processorHeader,
+    processorHeader,
     'utf-8'
   );
   await fs.writeFile(
     path.join(srcDir, 'PluginProcessor.cpp'),
-    juceProject.processorImpl,
+    processorImpl,
     'utf-8'
   );
   await fs.writeFile(
@@ -73,6 +103,10 @@ async function exportNativePlugin(
     juceProject.editorImpl,
     'utf-8'
   );
+
+  // Write CMake file for modern build system
+  const cmake = generateCMakeFile(project);
+  await fs.writeFile(path.join(outputDir, 'CMakeLists.txt'), cmake, 'utf-8');
 
   // Write build instructions
   const buildInstructions = generateBuildInstructions(config);
@@ -471,17 +505,94 @@ async function exportWebPlugin(
   config: ExportConfig,
   outputDir: string
 ): Promise<{ outputPath: string }> {
-  // Generate Web Audio API code
-  const webCode = generateWebAudioCode(project);
+  // Generate Web Audio plugin using enhanced generator
+  const webPlugin = generateWebAudioPlugin(project);
+  const pluginName = project.name.replace(/\s+/g, '');
 
-  await fs.writeFile(path.join(outputDir, 'plugin.js'), webCode, 'utf-8');
-  await fs.writeFile(
-    path.join(outputDir, 'index.html'),
-    generateWebHTML(project),
-    'utf-8'
-  );
+  // Write JavaScript module
+  await fs.writeFile(path.join(outputDir, `${pluginName}.js`), webPlugin.js, 'utf-8');
+
+  // Write HTML demo
+  await fs.writeFile(path.join(outputDir, 'index.html'), webPlugin.html, 'utf-8');
+
+  // Write package.json
+  await fs.writeFile(path.join(outputDir, 'package.json'), webPlugin.package, 'utf-8');
+
+  // Write README
+  const readme = generateWebReadme(project);
+  await fs.writeFile(path.join(outputDir, 'README.md'), readme, 'utf-8');
 
   return { outputPath: outputDir };
+}
+
+function generateWebReadme(project: PluginProject): string {
+  const pluginName = project.name.replace(/\s+/g, '');
+
+  return `# ${project.name}
+
+${project.description}
+
+## Web Audio Plugin
+
+This is a Web Audio API plugin that can run directly in the browser.
+
+### Installation
+
+\`\`\`bash
+npm install
+\`\`\`
+
+### Usage
+
+#### HTML
+
+\`\`\`html
+<script type="module">
+  import ${pluginName}Plugin from './${pluginName}.js';
+
+  const audioContext = new AudioContext();
+  const plugin = new ${pluginName}Plugin(audioContext);
+  plugin.connect(audioContext.destination);
+</script>
+\`\`\`
+
+#### Quick Test
+
+Open \`index.html\` in a modern web browser to test the plugin.
+
+Or start a local server:
+
+\`\`\`bash
+npm start
+# Then open http://localhost:8000
+\`\`\`
+
+### API
+
+#### Constructor
+
+\`\`\`javascript
+const plugin = new ${pluginName}Plugin(audioContext);
+\`\`\`
+
+#### Methods
+
+- \`connect(destination)\` - Connect plugin output to destination
+- \`disconnect()\` - Disconnect plugin output
+- \`setParameter(name, value, time)\` - Set parameter value with optional ramp time
+- \`getParameter(name)\` - Get current parameter value
+- \`getState()\` - Get all parameter values as object
+- \`setState(state)\` - Set all parameters from state object
+- \`dispose()\` - Clean up resources
+
+### Parameters
+
+${Object.keys(project.dspGraph.nodes).length} DSP parameters available for automation.
+
+### License
+
+Generated by Sound Designer v${project.version}
+`;
 }
 
 function generateWebAudioCode(project: PluginProject): string {
