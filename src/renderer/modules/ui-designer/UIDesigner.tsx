@@ -147,6 +147,41 @@ export function UIDesigner() {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.mode !== 'ui') return;
+
+      const x = snap(e.clientX - rect.left);
+      const y = snap(e.clientY - rect.top);
+
+      const type = data.type;
+      const { addUIComponent } = useProjectStore.getState();
+
+      addUIComponent({
+        type: type as any,
+        x,
+        y,
+        width: type === 'knob' ? 80 : type === 'waveform' ? 300 : type === 'keyboard' ? 400 : type === 'xy-pad' ? 200 : 200,
+        height: type === 'knob' ? 100 : type === 'slider' ? 60 : type === 'waveform' ? 150 : type === 'keyboard' ? 100 : type === 'xy-pad' ? 200 : 40,
+        label: `${type.charAt(0).toUpperCase() + type.slice(1)}`,
+        properties: {},
+        style: {},
+      });
+    } catch (err) {
+      console.error('Failed to handle drop:', err);
+    }
+  };
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -171,6 +206,8 @@ export function UIDesigner() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onClick={handleCanvasClick}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         {project.uiComponents.map((component) => {
           const isSelected =

@@ -55,6 +55,11 @@ export function Sidebar() {
     });
   };
 
+  const handleDragStart = (e: React.DragEvent, type: string, mode: 'ui' | 'dsp') => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/json', JSON.stringify({ type, mode }));
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -69,7 +74,10 @@ export function Sidebar() {
               <button
                 key={comp.type}
                 className="component-item"
+                draggable
+                onDragStart={(e) => handleDragStart(e, comp.type, 'ui')}
                 onClick={() => handleAddUIComponent(comp.type)}
+                title="Drag to canvas or click to add"
               >
                 <span className="component-icon">{comp.icon}</span>
                 <span className="component-label">{comp.label}</span>
@@ -86,7 +94,10 @@ export function Sidebar() {
               <button
                 key={node.type}
                 className="component-item"
+                draggable
+                onDragStart={(e) => handleDragStart(e, node.type, 'dsp')}
                 onClick={() => handleAddDSPNode(node.type)}
+                title="Drag to graph or click to add"
               >
                 <span
                   className="component-color"

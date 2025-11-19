@@ -87,6 +87,15 @@
   opacity: 1;
 }
 
+.component-item:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.component-item[draggable="true"] {
+  cursor: grab;
+}
+
 .info-text {
   font-size: 12px;
   color: var(--text-secondary);

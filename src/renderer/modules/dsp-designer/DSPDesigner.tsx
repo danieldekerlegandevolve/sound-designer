@@ -22,8 +22,9 @@ const nodeTypes = {
 };
 
 export function DSPDesigner() {
-  const { project, addConnection, deleteConnection, updateDSPNode } = useProjectStore();
+  const { project, addConnection, deleteConnection, updateDSPNode, addDSPNode } = useProjectStore();
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
 
   // Convert DSP graph to React Flow format
   const initialNodes: Node[] = project.dspGraph.nodes.map((node) => ({
@@ -113,6 +114,41 @@ export function DSPDesigner() {
     [deleteConnection]
   );
 
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      if (!reactFlowInstance) return;
+
+      try {
+        const data = JSON.parse(event.dataTransfer.getData('application/json'));
+        if (data.mode !== 'dsp') return;
+
+        const position = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        addDSPNode({
+          type: data.type as any,
+          x: position.x,
+          y: position.y,
+          parameters: [],
+          inputs: ['input'],
+          outputs: ['output'],
+        });
+      } catch (err) {
+        console.error('Failed to handle drop:', err);
+      }
+    },
+    [reactFlowInstance, addDSPNode]
+  );
+
   return (
     <div className="dsp-designer">
       {validationError && (
@@ -128,6 +164,9 @@ export function DSPDesigner() {
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         onEdgesDelete={onEdgesDelete}
+        onInit={setReactFlowInstance}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
         nodeTypes={nodeTypes}
         fitView
         attributionPosition="bottom-left"
