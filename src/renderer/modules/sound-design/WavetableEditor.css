@@ -1,0 +1,157 @@
+.wavetable-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-left svg {
+  color: var(--accent-blue);
+}
+
+.wavetable-name-input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  width: 250px;
+}
+
+.wavetable-name-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preview-btn:hover {
+  background: #3a8ee6;
+  transform: translateY(-1px);
+}
+
+.preview-btn:active {
+  transform: translateY(0);
+}
+
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+}
+
+.wavetable-canvas {
+  width: 100%;
+  border-radius: 8px;
+  background: #1a1a1a;
+  cursor: crosshair;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.wavetable-canvas:active {
+  cursor: grabbing;
+}
+
+.editor-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.preset-buttons,
+.tool-buttons,
+.io-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-buttons button,
+.tool-buttons button,
+.io-buttons button,
+.import-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-buttons button:hover,
+.tool-buttons button:hover:not(:disabled),
+.io-buttons button:hover,
+.import-btn:hover {
+  background: #3a3a3a;
+  border-color: var(--accent-blue);
+}
+
+.tool-buttons button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.import-btn {
+  cursor: pointer;
+}
+
+.control-group input[type='range'] {
+  width: 100%;
+}
+
+.control-group span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
