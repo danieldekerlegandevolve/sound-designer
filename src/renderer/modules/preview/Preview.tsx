@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { audioEngine } from '../../audio/AudioEngine';
 import { Play, Square, Volume2, Settings, RefreshCw } from 'lucide-react';
+import { Oscilloscope } from './Oscilloscope';
+import { SpectrumAnalyzer } from './SpectrumAnalyzer';
 import './Preview.css';
 
 export function Preview() {
@@ -154,6 +156,11 @@ export function Preview() {
             <Settings size={18} />
             Settings
           </button>
+        </div>
+
+        <div className="preview-visualizations">
+          <Oscilloscope isPlaying={isPlaying} width={600} height={150} />
+          <SpectrumAnalyzer isPlaying={isPlaying} width={600} height={150} />
         </div>
 
         <div className="preview-info">

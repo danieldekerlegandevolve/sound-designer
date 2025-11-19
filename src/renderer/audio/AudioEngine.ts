@@ -5,11 +5,20 @@ export class AudioEngine {
   private nodes: Map<string, AudioNode> = new Map();
   private isRunning: boolean = false;
   private masterGain: GainNode | null = null;
+  private analyser: AnalyserNode | null = null;
 
   async initialize(): Promise<void> {
     this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.masterGain = this.context.createGain();
-    this.masterGain.connect(this.context.destination);
+
+    // Create persistent analyser node
+    this.analyser = this.context.createAnalyser();
+    this.analyser.fftSize = 2048;
+    this.analyser.smoothingTimeConstant = 0.8;
+
+    // Connect: masterGain -> analyser -> destination
+    this.masterGain.connect(this.analyser);
+    this.analyser.connect(this.context.destination);
 
     // Load AudioWorklet processors
     try {
@@ -271,17 +280,26 @@ export class AudioEngine {
     }
   }
 
-  getAnalyserData(): Uint8Array | null {
-    if (!this.context || !this.masterGain) return null;
+  getTimeDomainData(): Uint8Array | null {
+    if (!this.analyser) return null;
 
-    const analyser = this.context.createAnalyser();
-    analyser.fftSize = 2048;
-    this.masterGain.connect(analyser);
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteTimeDomainData(dataArray);
+    const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteTimeDomainData(dataArray);
 
     return dataArray;
+  }
+
+  getFrequencyData(): Uint8Array | null {
+    if (!this.analyser) return null;
+
+    const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(dataArray);
+
+    return dataArray;
+  }
+
+  getAnalyser(): AnalyserNode | null {
+    return this.analyser;
   }
 
   dispose(): void {

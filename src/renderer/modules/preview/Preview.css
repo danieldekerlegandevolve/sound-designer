@@ -147,6 +147,14 @@
   border-color: var(--accent-blue);
 }
 
+.preview-visualizations {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .preview-info {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
