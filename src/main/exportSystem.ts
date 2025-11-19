@@ -4,6 +4,8 @@ import { PluginProject, ExportConfig } from '@shared/types';
 import { validateProjectForExport, generateValidationReport } from './exportValidation';
 import { generateEnhancedProcessorHeader, generateEnhancedProcessorImplementation, generateCMakeFile } from './enhancedJUCEExport';
 import { generateWebAudioPlugin } from './webAudioExport';
+import { exportStandaloneApp as exportStandaloneElectronApp } from './standaloneExport';
+import { exportLV2Plugin } from './lv2Export';
 
 export async function exportPlugin(config: {
   project: PluginProject;
@@ -39,12 +41,16 @@ export async function exportPlugin(config: {
       result = await exportNativePlugin(project, exportConfig, outputDir);
       break;
 
+    case 'lv2':
+      result = await exportLV2Plugin(project, exportConfig, outputDir);
+      break;
+
     case 'web':
       result = await exportWebPlugin(project, exportConfig, outputDir);
       break;
 
     case 'standalone':
-      result = await exportStandaloneApp(project, exportConfig, outputDir);
+      result = await exportStandaloneElectronApp(project, exportConfig, outputDir);
       break;
 
     case 'mobile':

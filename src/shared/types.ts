@@ -99,7 +99,7 @@ export interface PluginSettings {
 }
 
 export interface ExportConfig {
-  format: 'vst' | 'vst3' | 'au' | 'web' | 'standalone' | 'mobile' | 'hardware';
+  format: 'vst' | 'vst3' | 'au' | 'lv2' | 'web' | 'standalone' | 'mobile' | 'hardware';
   platform: 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'web';
   outputPath: string;
   optimizationLevel: 'debug' | 'release';

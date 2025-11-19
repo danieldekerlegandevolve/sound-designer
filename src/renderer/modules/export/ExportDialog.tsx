@@ -63,6 +63,7 @@ export function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
                 { value: 'vst', label: 'VST 2' },
                 { value: 'vst3', label: 'VST 3' },
                 { value: 'au', label: 'Audio Unit' },
+                { value: 'lv2', label: 'LV2' },
                 { value: 'web', label: 'Web App' },
                 { value: 'standalone', label: 'Standalone' },
                 { value: 'mobile', label: 'Mobile' },
