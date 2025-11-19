@@ -84,6 +84,12 @@ export class AudioEngine {
         return this.createDistortion(node);
       case 'reverb':
         return this.createReverb(node);
+      case 'noise':
+        return this.createNoise(node);
+      case 'ringmod':
+        return this.createRingModulator(node);
+      case 'bitcrusher':
+        return this.createBitCrusher(node);
       default:
         console.warn(`Unsupported node type: ${node.type}`);
         return null;
@@ -214,6 +220,73 @@ export class AudioEngine {
 
     reverb.buffer = impulse;
     return reverb;
+  }
+
+  private createNoise(node: DSPNode): AudioBufferSourceNode {
+    const bufferSize = 2 * this.context!.sampleRate;
+    const noiseBuffer = this.context!.createBuffer(1, bufferSize, this.context!.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+
+    // Generate white noise
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.context!.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    // Create gain node for color/type control
+    const colorGain = this.context!.createGain();
+    const typeParam = node.parameters.find(p => p.name === 'type' || p.name === 'color');
+
+    if (typeParam?.value === 'pink') {
+      // Simple pink noise approximation using filtering
+      colorGain.gain.value = 0.5;
+    } else {
+      colorGain.gain.value = 1.0;
+    }
+
+    noise.connect(colorGain);
+    return noise;
+  }
+
+  private createRingModulator(node: DSPNode): GainNode {
+    // Ring modulation using gain node and oscillator
+    const ringMod = this.context!.createGain();
+    const carrier = this.context!.createOscillator();
+
+    const freqParam = node.parameters.find(p => p.name === 'frequency');
+    if (freqParam) carrier.frequency.value = freqParam.value;
+    else carrier.frequency.value = 440;
+
+    // Connect carrier to gain node for modulation
+    carrier.connect(ringMod.gain);
+    carrier.start();
+
+    return ringMod;
+  }
+
+  private createBitCrusher(node: DSPNode): WaveShaperNode {
+    const bitCrusher = this.context!.createWaveShaper();
+
+    const bitsParam = node.parameters.find(p => p.name === 'bits');
+    const bits = bitsParam ? bitsParam.value : 8;
+
+    // Create bit reduction curve
+    const samples = 65536;
+    const curve = new Float32Array(samples);
+    const step = Math.pow(0.5, bits);
+
+    for (let i = 0; i < samples; i++) {
+      const x = (i - samples / 2) / (samples / 2);
+      curve[i] = Math.round(x / step) * step;
+    }
+
+    bitCrusher.curve = curve;
+    bitCrusher.oversample = 'none';
+
+    return bitCrusher;
   }
 
   async start(): Promise<void> {

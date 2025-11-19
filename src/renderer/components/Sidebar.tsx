@@ -29,6 +29,9 @@ export function Sidebar() {
     { type: 'compressor', label: 'Compressor', color: '#14b8a6' },
     { type: 'eq', label: 'EQ', color: '#06b6d4' },
     { type: 'mixer', label: 'Mixer', color: '#64748b' },
+    { type: 'noise', label: 'Noise Generator', color: '#f59e0b' },
+    { type: 'ringmod', label: 'Ring Modulator', color: '#10b981' },
+    { type: 'bitcrusher', label: 'Bit Crusher', color: '#f97316' },
   ];
 
   const handleAddUIComponent = (type: string) => {

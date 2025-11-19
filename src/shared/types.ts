@@ -54,7 +54,7 @@ export interface DSPNode {
   id: string;
   type: 'oscillator' | 'filter' | 'envelope' | 'lfo' | 'gain' | 'delay' | 'reverb' |
         'distortion' | 'compressor' | 'eq' | 'mixer' | 'chorus' | 'flanger' | 'phaser' |
-        'vocoder' | 'input' | 'output' | 'custom';
+        'vocoder' | 'noise' | 'ringmod' | 'bitcrusher' | 'input' | 'output' | 'custom';
   x: number;
   y: number;
   parameters: DSPParameter[];

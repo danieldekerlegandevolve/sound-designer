@@ -16,6 +16,9 @@ const nodeColors: Record<string, string> = {
   compressor: '#14b8a6',
   eq: '#06b6d4',
   mixer: '#64748b',
+  noise: '#f59e0b',
+  ringmod: '#10b981',
+  bitcrusher: '#f97316',
 };
 
 export function DSPNodeComponent({ id, data, selected }: NodeProps<DSPNode>) {
