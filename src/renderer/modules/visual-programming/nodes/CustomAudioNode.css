@@ -1,0 +1,131 @@
+/* Custom Audio Node Styles */
+
+.custom-audio-node {
+  min-width: 180px;
+  background: #2a2a2a;
+  border: 2px solid #4a4a4a;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.custom-audio-node.selected {
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.custom-audio-node:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+}
+
+.node-icon {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.node-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-body {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.node-parameters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-parameter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.param-name {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.param-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.param-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.2s;
+}
+
+.param-more {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.debug-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debug-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.level-meter {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: 8px;
+}
+
+.level-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #51cf66, #ffd43b, #ff6b6b);
+  border-radius: 2px;
+  transition: width 0.1s;
+}
+
+/* Handles */
+.audio-handle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.modulation-handle {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  transform: rotate(45deg);
+}

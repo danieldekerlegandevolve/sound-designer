@@ -4,7 +4,9 @@
  * Manages global keyboard shortcuts for the application
  */
 
+import React, { useEffect } from 'react';
 import { KeyboardShortcut } from '../../shared/undoRedoTypes';
+import { useProjectStore } from '../store/projectStore';
 
 /**
  * Keyboard shortcut manager
@@ -246,4 +248,47 @@ export const DEFAULT_SHORTCUTS = {
     description: 'Play/Pause',
     category: 'transport',
   },
+};
+
+/**
+ * KeyboardShortcuts Component
+ * Sets up global keyboard shortcuts for the application
+ */
+export const KeyboardShortcuts: React.FC = () => {
+  const { undo, redo } = useProjectStore((state) => ({
+    undo: state.undo,
+    redo: state.redo,
+  }));
+
+  useEffect(() => {
+    const manager = getKeyboardShortcutManager();
+
+    // Register default shortcuts
+    const shortcuts: KeyboardShortcut[] = [
+      {
+        ...DEFAULT_SHORTCUTS.UNDO,
+        action: () => {
+          undo();
+        },
+      },
+      {
+        ...DEFAULT_SHORTCUTS.REDO,
+        action: () => {
+          redo();
+        },
+      },
+      // Add more shortcuts as needed
+    ];
+
+    const unregister = manager.registerAll(shortcuts);
+    manager.start();
+
+    // Cleanup on unmount
+    return () => {
+      unregister();
+      manager.stop();
+    };
+  }, [undo, redo]);
+
+  return null;
 };
