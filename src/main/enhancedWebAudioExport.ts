@@ -87,11 +87,11 @@ export interface ${pluginName}Parameters {
 ${project.dspGraph.nodes
   .flatMap((node) =>
     (node.parameters || []).map((param) => {
-      const paramName = sanitizeName(\`\${node.label || node.type}_\${param.name}\`);
-      return \`  \${paramName}: number;\`;
+      const paramName = sanitizeName(`${node.label || node.type}_${param.name}`);
+      return `  ${paramName}: number;`;
     })
   )
-  .join('\\n')}
+  .join('\n')}
 }
 
 export interface ${pluginName}Options {
@@ -278,13 +278,13 @@ export interface ${pluginName}Parameters {
 ${project.dspGraph.nodes
   .flatMap((node) =>
     (node.parameters || []).map((param) => {
-      const paramName = sanitizeName(\`\${node.label || node.type}_\${param.name}\`);
+      const paramName = sanitizeName(`${node.label || node.type}_${param.name}`);
       const min = param.min ?? 0;
       const max = param.max ?? 1;
-      return \`  /** Range: [\${min}, \${max}] */\\n  \${paramName}: number;\`;
+      return `  /** Range: [${min}, ${max}] */\n  ${paramName}: number;`;
     })
   )
-  .join('\\n')}
+  .join('\n')}
 }
 
 export interface ${pluginName}Options {
@@ -877,11 +877,11 @@ Clean up resources and disconnect all nodes.
 ${project.dspGraph.nodes
   .flatMap((node) =>
     (node.parameters || []).map((param) => {
-      const paramName = sanitizeName(\`\${node.label || node.type}_\${param.name}\`);
-      return \`- \`\${paramName}\`: \${param.name} (\${param.min ?? 0} - \${param.max ?? 1})\`;
+      const paramName = sanitizeName(`${node.label || node.type}_${param.name}`);
+      return `- \`${paramName}\`: ${param.name} (${param.min ?? 0} - ${param.max ?? 1})`;
     })
   )
-  .join('\\n')}
+  .join('\n')}
 
 ## Examples
 
@@ -1011,56 +1011,56 @@ function generateNodeCreation(project: PluginProject): string {
   const code: string[] = [];
 
   project.dspGraph.nodes.forEach((node, index) => {
-    const nodeName = sanitizeName(node.label || \`\${node.type}\${index}\`);
+    const nodeName = sanitizeName(node.label || `${node.type}${index}`);
 
     switch (node.type) {
       case 'oscillator':
-        code.push(\`    const \${nodeName} = this.context.createOscillator();\`);
-        code.push(\`    \${nodeName}.type = 'sine';\`);
-        code.push(\`    \${nodeName}.start();\`);
-        code.push(\`    this.nodes.set('\${nodeName}', \${nodeName});\`);
+        code.push(`    const ${nodeName} = this.context.createOscillator();`);
+        code.push(`    ${nodeName}.type = 'sine';`);
+        code.push(`    ${nodeName}.start();`);
+        code.push(`    this.nodes.set('${nodeName}', ${nodeName});`);
         break;
 
       case 'filter':
-        code.push(\`    const \${nodeName} = this.context.createBiquadFilter();\`);
-        code.push(\`    \${nodeName}.type = 'lowpass';\`);
-        code.push(\`    this.nodes.set('\${nodeName}', \${nodeName});\`);
-        code.push(\`    this.parameters.set('\${nodeName}_frequency', \${nodeName}.frequency);\`);
-        code.push(\`    this.parameters.set('\${nodeName}_Q', \${nodeName}.Q);\`);
+        code.push(`    const ${nodeName} = this.context.createBiquadFilter();`);
+        code.push(`    ${nodeName}.type = 'lowpass';`);
+        code.push(`    this.nodes.set('${nodeName}', ${nodeName});`);
+        code.push(`    this.parameters.set('${nodeName}_frequency', ${nodeName}.frequency);`);
+        code.push(`    this.parameters.set('${nodeName}_Q', ${nodeName}.Q);`);
         break;
 
       case 'gain':
-        code.push(\`    const \${nodeName} = this.context.createGain();\`);
-        code.push(\`    this.nodes.set('\${nodeName}', \${nodeName});\`);
-        code.push(\`    this.parameters.set('\${nodeName}_gain', \${nodeName}.gain);\`);
+        code.push(`    const ${nodeName} = this.context.createGain();`);
+        code.push(`    this.nodes.set('${nodeName}', ${nodeName});`);
+        code.push(`    this.parameters.set('${nodeName}_gain', ${nodeName}.gain);`);
         break;
 
       case 'delay':
-        code.push(\`    const \${nodeName} = this.context.createDelay(5.0);\`);
-        code.push(\`    this.nodes.set('\${nodeName}', \${nodeName});\`);
-        code.push(\`    this.parameters.set('\${nodeName}_delayTime', \${nodeName}.delayTime);\`);
+        code.push(`    const ${nodeName} = this.context.createDelay(5.0);`);
+        code.push(`    this.nodes.set('${nodeName}', ${nodeName});`);
+        code.push(`    this.parameters.set('${nodeName}_delayTime', ${nodeName}.delayTime);`);
         break;
     }
   });
 
-  return code.join('\\n');
+  return code.join('\n');
 }
 
 function generateDSPChainSetup(project: PluginProject): string {
   const connections: string[] = [];
-  const nodes = project.dspGraph.nodes.map((n, i) => sanitizeName(n.label || \`\${n.type}\${i}\`));
+  const nodes = project.dspGraph.nodes.map((n, i) => sanitizeName(n.label || `${n.type}${i}`));
 
   if (nodes.length > 0) {
-    connections.push(\`    this.input.connect(this.nodes.get('\${nodes[0]}')!);\`);
+    connections.push(`    this.input.connect(this.nodes.get('${nodes[0]}')!);`);
 
     for (let i = 0; i < nodes.length - 1; i++) {
-      connections.push(\`    this.nodes.get('\${nodes[i]}')!.connect(this.nodes.get('\${nodes[i + 1]}')!);\`);
+      connections.push(`    this.nodes.get('${nodes[i]}')!.connect(this.nodes.get('${nodes[i + 1]}')!);`);
     }
 
-    connections.push(\`    this.nodes.get('\${nodes[nodes.length - 1]}')!.connect(this.output);\`);
+    connections.push(`    this.nodes.get('${nodes[nodes.length - 1]}')!.connect(this.output);`);
   } else {
     connections.push('    this.input.connect(this.output);');
   }
 
-  return connections.join('\\n');
+  return connections.join('\n');
 }
