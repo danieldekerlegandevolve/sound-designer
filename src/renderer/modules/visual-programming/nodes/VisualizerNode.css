@@ -1,0 +1,79 @@
+/* Visualizer Node Styles */
+
+.visualizer-node {
+  min-width: 220px;
+  background: #1a2a1a;
+  border: 2px solid #51cf66;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(81, 207, 102, 0.2);
+}
+
+.visualizer-node.selected {
+  border-color: #63e6be;
+  box-shadow: 0 0 0 2px rgba(99, 230, 190, 0.3), 0 4px 16px rgba(81, 207, 102, 0.3);
+}
+
+.visualizer-node.active {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(81, 207, 102, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(81, 207, 102, 0.4);
+  }
+}
+
+.visualizer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #51cf66, #63e6be);
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+}
+
+.visualizer-icon {
+  font-size: 16px;
+}
+
+.visualizer-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visualizer-body {
+  padding: 12px;
+}
+
+.visualizer-canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  background: #000;
+}
+
+.visualizer-type {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.visualizer-input {
+  width: 12px;
+  height: 12px;
+  background: #51cf66;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
