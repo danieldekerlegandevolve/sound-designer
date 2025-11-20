@@ -350,6 +350,119 @@ export class AudioGraphManager {
   }
 
   /**
+   * Get master analyzer node for visualizations
+   */
+  getMasterAnalyzer(): AnalyserNode | null {
+    if (!this.audioContext || !this.masterGainNode) return null;
+
+    // Create a persistent analyzer connected to master output
+    const analyzer = this.audioContext.createAnalyser();
+    analyzer.fftSize = 2048;
+    analyzer.smoothingTimeConstant = 0.8;
+
+    // Connect master to analyzer (analyzer doesn't affect audio output)
+    this.masterGainNode.connect(analyzer);
+
+    return analyzer;
+  }
+
+  /**
+   * Export graph to JSON
+   */
+  exportGraph(): AudioGraph {
+    return {
+      nodes: this.graph.nodes.map((node) => ({ ...node })),
+      connections: this.graph.connections.map((conn) => ({ ...conn })),
+      sampleRate: this.graph.sampleRate,
+      bufferSize: this.graph.bufferSize,
+      isPlaying: this.graph.isPlaying,
+    };
+  }
+
+  /**
+   * Import graph from JSON
+   */
+  async importGraph(graph: AudioGraph): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('Audio engine not initialized');
+    }
+
+    // Clear existing graph
+    this.clear();
+
+    // Create nodes
+    for (const node of graph.nodes) {
+      if (node.type === AudioNodeType.OUTPUT) {
+        continue; // Skip output node as it's created by default
+      }
+
+      const newNode = await this.createNode(node.type, node.position);
+
+      // Restore parameters
+      for (let i = 0; i < node.parameters.length; i++) {
+        if (newNode.parameters[i]) {
+          this.setParameter(newNode.id, newNode.parameters[i].id, node.parameters[i].value);
+        }
+      }
+    }
+
+    // Create connections
+    for (const conn of graph.connections) {
+      try {
+        // Find corresponding nodes in new graph
+        const sourceIndex = graph.nodes.findIndex((n) => n.id === conn.sourceNodeId);
+        const targetIndex = graph.nodes.findIndex((n) => n.id === conn.targetNodeId);
+
+        if (sourceIndex >= 0 && targetIndex >= 0) {
+          const newSourceNode = this.graph.nodes[sourceIndex];
+          const newTargetNode = this.graph.nodes[targetIndex];
+
+          if (newSourceNode && newTargetNode) {
+            const sourcePort = newSourceNode.outputs.find(
+              (p, i) => i === sourceIndex
+            );
+            const targetPort = newTargetNode.inputs.find(
+              (p, i) => i === targetIndex
+            );
+
+            if (sourcePort && targetPort) {
+              this.connect(
+                newSourceNode.id,
+                sourcePort.id,
+                newTargetNode.id,
+                targetPort.id
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to restore connection:', error);
+      }
+    }
+
+    console.log('Graph imported successfully');
+  }
+
+  /**
+   * Clear all nodes except output
+   */
+  clear(): void {
+    const nodesToDelete = this.graph.nodes.filter(
+      (node) => node.type !== AudioNodeType.OUTPUT
+    );
+
+    nodesToDelete.forEach((node) => {
+      try {
+        this.deleteNode(node.id);
+      } catch (error) {
+        console.warn(`Failed to delete node ${node.id}:`, error);
+      }
+    });
+
+    console.log('Graph cleared');
+  }
+
+  /**
    * Start audio playback
    */
   async start(): Promise<void> {
