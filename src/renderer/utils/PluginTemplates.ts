@@ -935,6 +935,408 @@ class Reverb {
       },
     },
   },
+
+  // SPECTRUM ANALYZER (UTILITY)
+  {
+    id: 'template-spectrum-analyzer',
+    name: 'Spectrum Analyzer',
+    category: 'utility',
+    description: 'Real-time spectrum analyzer with adjustable resolution and smoothing',
+    tags: ['analyzer', 'spectrum', 'visualization', 'utility'],
+    project: {
+      name: 'Spectrum Analyzer',
+      version: '1.0.0',
+      description: 'A real-time spectrum analyzer utility',
+      author: '',
+      uiComponents: [
+        {
+          id: nanoid(),
+          type: 'waveform',
+          label: 'Spectrum',
+          x: 20,
+          y: 20,
+          width: 660,
+          height: 300,
+          properties: {
+            type: 'spectrum',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Resolution',
+          x: 50,
+          y: 350,
+          width: 80,
+          height: 100,
+          properties: {
+            min: 512,
+            max: 8192,
+            value: 2048,
+            parameter: 'fft_size',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Smoothing',
+          x: 150,
+          y: 350,
+          width: 80,
+          height: 100,
+          properties: {
+            min: 0,
+            max: 1,
+            value: 0.8,
+            parameter: 'smoothing',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Gain',
+          x: 250,
+          y: 350,
+          width: 80,
+          height: 100,
+          properties: {
+            min: -12,
+            max: 12,
+            value: 0,
+            parameter: 'display_gain',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'toggle',
+          label: 'Freeze',
+          x: 380,
+          y: 370,
+          width: 100,
+          height: 60,
+          properties: {
+            parameter: 'freeze',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'toggle',
+          label: 'Peak Hold',
+          x: 500,
+          y: 370,
+          width: 100,
+          height: 60,
+          properties: {
+            parameter: 'peak_hold',
+          },
+          style: {},
+        },
+      ],
+      dspGraph: {
+        nodes: [
+          {
+            id: nanoid(),
+            type: 'input',
+            label: 'Input',
+            ...nodePos(0, 0),
+            parameters: {},
+          },
+          {
+            id: nanoid(),
+            type: 'gain',
+            label: 'Gain',
+            ...nodePos(1, 0),
+            parameters: {
+              gain: 1,
+            },
+          },
+          {
+            id: nanoid(),
+            type: 'output',
+            label: 'Output',
+            ...nodePos(2, 0),
+            parameters: {},
+          },
+        ],
+        connections: [],
+      },
+      code: {
+        dsp: `// Spectrum Analyzer DSP code
+class FFTAnalyzer {
+  float* fftBuffer;
+  float* magnitudes;
+  int fftSize;
+  int bufferPos;
+
+  void analyzeSpectrum(float* input, int numSamples) {
+    // Copy samples to FFT buffer
+    for (int i = 0; i < numSamples; ++i) {
+      fftBuffer[bufferPos++] = input[i];
+      if (bufferPos >= fftSize) {
+        // Perform FFT
+        performFFT(fftBuffer, magnitudes, fftSize);
+        bufferPos = 0;
+      }
+    }
+  }
+
+  void performFFT(float* timeDomain, float* freqDomain, int size) {
+    // FFT implementation (Cooley-Tukey algorithm)
+    // Convert time domain to frequency domain
+    // Calculate magnitudes
+  }
+};`,
+        ui: '// UI customization for spectrum display\n',
+        helpers: '// Helper functions for frequency conversions\n',
+      },
+      settings: {
+        width: 700,
+        height: 500,
+        resizable: true,
+        backgroundColor: '#1a1a1a',
+        sampleRate: 44100,
+        bufferSize: 512,
+      },
+    },
+  },
+
+  // LFO MODULATOR (MODULATION)
+  {
+    id: 'template-lfo-modulator',
+    name: 'LFO Modulator',
+    category: 'modulation',
+    description: 'Multi-waveform LFO with tempo sync and multiple mod destinations',
+    tags: ['lfo', 'modulation', 'automation'],
+    project: {
+      name: 'LFO Modulator',
+      version: '1.0.0',
+      description: 'A flexible LFO modulation utility',
+      author: '',
+      uiComponents: [
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Rate',
+          x: 50,
+          y: 50,
+          width: 80,
+          height: 100,
+          properties: {
+            min: 0.01,
+            max: 20,
+            value: 1,
+            parameter: 'lfo_rate',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Depth',
+          x: 150,
+          y: 50,
+          width: 80,
+          height: 100,
+          properties: {
+            min: 0,
+            max: 1,
+            value: 0.5,
+            parameter: 'lfo_depth',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'knob',
+          label: 'Phase',
+          x: 250,
+          y: 50,
+          width: 80,
+          height: 100,
+          properties: {
+            min: 0,
+            max: 360,
+            value: 0,
+            parameter: 'lfo_phase',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'button',
+          label: 'Sine',
+          x: 50,
+          y: 180,
+          width: 70,
+          height: 40,
+          properties: {
+            parameter: 'waveform',
+            value: 'sine',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'button',
+          label: 'Triangle',
+          x: 130,
+          y: 180,
+          width: 70,
+          height: 40,
+          properties: {
+            parameter: 'waveform',
+            value: 'triangle',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'button',
+          label: 'Square',
+          x: 210,
+          y: 180,
+          width: 70,
+          height: 40,
+          properties: {
+            parameter: 'waveform',
+            value: 'square',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'button',
+          label: 'Saw',
+          x: 290,
+          y: 180,
+          width: 70,
+          height: 40,
+          properties: {
+            parameter: 'waveform',
+            value: 'saw',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'toggle',
+          label: 'Tempo Sync',
+          x: 50,
+          y: 250,
+          width: 120,
+          height: 60,
+          properties: {
+            parameter: 'tempo_sync',
+          },
+          style: {},
+        },
+        {
+          id: nanoid(),
+          type: 'waveform',
+          label: 'LFO Shape',
+          x: 400,
+          y: 50,
+          width: 250,
+          height: 150,
+          properties: {
+            type: 'lfo',
+          },
+          style: {},
+        },
+      ],
+      dspGraph: {
+        nodes: [
+          {
+            id: nanoid(),
+            type: 'input',
+            label: 'Input',
+            ...nodePos(0, 0),
+            parameters: {},
+          },
+          {
+            id: nanoid(),
+            type: 'lfo',
+            label: 'LFO',
+            ...nodePos(1, 0),
+            parameters: {
+              rate: 1,
+              depth: 0.5,
+              waveform: 'sine',
+              phase: 0,
+            },
+          },
+          {
+            id: nanoid(),
+            type: 'gain',
+            label: 'Modulated Gain',
+            ...nodePos(2, 0),
+            parameters: {
+              gain: 1,
+            },
+          },
+          {
+            id: nanoid(),
+            type: 'output',
+            label: 'Output',
+            ...nodePos(3, 0),
+            parameters: {},
+          },
+        ],
+        connections: [],
+      },
+      code: {
+        dsp: `// LFO Modulator DSP code
+class LFO {
+  float phase;
+  float rate;
+  float sampleRate;
+
+  enum Waveform { Sine, Triangle, Square, Saw };
+  Waveform waveform;
+
+  float process() {
+    float output = 0.0f;
+
+    switch (waveform) {
+      case Sine:
+        output = sin(2.0f * M_PI * phase);
+        break;
+      case Triangle:
+        output = 2.0f * abs(2.0f * phase - 1.0f) - 1.0f;
+        break;
+      case Square:
+        output = phase < 0.5f ? 1.0f : -1.0f;
+        break;
+      case Saw:
+        output = 2.0f * phase - 1.0f;
+        break;
+    }
+
+    // Advance phase
+    phase += rate / sampleRate;
+    if (phase >= 1.0f) phase -= 1.0f;
+
+    return output;
+  }
+};`,
+        ui: '// UI customization for LFO display\n',
+        helpers: '// Helper functions for tempo sync calculations\n',
+      },
+      settings: {
+        width: 700,
+        height: 350,
+        resizable: true,
+        backgroundColor: '#2a2a2a',
+        sampleRate: 44100,
+        bufferSize: 512,
+      },
+    },
+  },
 ];
 
 // Get templates by category

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -27,25 +27,31 @@ export function DSPDesigner() {
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
 
   // Convert DSP graph to React Flow format
-  const initialNodes: Node[] = project.dspGraph.nodes.map((node) => ({
-    id: node.id,
-    type: 'dspNode',
-    position: { x: node.x, y: node.y },
-    data: node,
-  }));
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  const initialEdges: Edge[] = project.dspGraph.connections.map((conn) => ({
-    id: conn.id,
-    source: conn.sourceNodeId,
-    sourceHandle: conn.sourcePort,
-    target: conn.targetNodeId,
-    targetHandle: conn.targetPort,
-    animated: true,
-    style: { stroke: '#4a9eff', strokeWidth: 2 },
-  }));
+  // Sync nodes and edges with project state
+  useEffect(() => {
+    const newNodes: Node[] = project.dspGraph.nodes.map((node) => ({
+      id: node.id,
+      type: 'dspNode',
+      position: { x: node.x, y: node.y },
+      data: node,
+    }));
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const newEdges: Edge[] = project.dspGraph.connections.map((conn) => ({
+      id: conn.id,
+      source: conn.sourceNodeId,
+      sourceHandle: conn.sourcePort,
+      target: conn.targetNodeId,
+      targetHandle: conn.targetPort,
+      animated: true,
+      style: { stroke: '#4a9eff', strokeWidth: 2 },
+    }));
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [project.dspGraph.nodes, project.dspGraph.connections, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
