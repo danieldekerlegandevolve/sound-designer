@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import type { PluginProject, DSPNode, UIComponent, DSPConnection } from '@shared/types';
+import type { PluginProject, DSPNode, UIComponent, DSPConnection, DSPParameter } from '@shared/types';
 
 /**
  * Auto-connect DSP nodes in sequential order
@@ -33,40 +33,73 @@ export function autoConnectNodes(nodes: DSPNode[]): DSPConnection[] {
 }
 
 /**
+ * Helper to map a component to a parameter
+ */
+function mapComponentToParameter(component: UIComponent, param: DSPParameter): UIComponent {
+  return {
+    ...component,
+    parameterId: param.id,
+    properties: {
+      ...component.properties,
+      min: param.min ?? component.properties.min,
+      max: param.max ?? component.properties.max,
+      value: param.value ?? component.properties.value,
+    },
+  };
+}
+
+/**
  * Map UI components to DSP node parameters by name matching
  */
 export function mapUIComponentsToParameters(
   uiComponents: UIComponent[],
   dspNodes: DSPNode[]
 ): UIComponent[] {
+  // Define parameter name synonyms/aliases
+  const parameterAliases: Record<string, string[]> = {
+    frequency: ['cutoff', 'freq', 'frequency'],
+    Q: ['resonance', 'q', 'res'],
+    attack: ['attack', 'atk'],
+    decay: ['decay', 'dec'],
+    sustain: ['sustain', 'sus'],
+    release: ['release', 'rel'],
+    gain: ['gain', 'level', 'volume', 'vol'],
+    mix: ['mix', 'wet', 'blend'],
+  };
+
   return uiComponents.map((component) => {
     // Get the parameter name from properties
     const paramName = component.properties?.parameter as string;
     if (!paramName) return component;
+
+    // Remove common prefixes (filter_, env_, lfo_, etc.)
+    const cleanedParamName = paramName.toLowerCase()
+      .replace(/^(filter|env|envelope|lfo|osc|oscillator|comp|compressor)_/, '');
 
     // Find matching parameter in any DSP node
     for (const node of dspNodes) {
       if (!node.parameters) continue;
 
       for (const param of node.parameters) {
-        // Match by name (case-insensitive, with underscores)
-        const normalizedParamName = param.name.toLowerCase().replace(/\s+/g, '_');
-        const normalizedSearchName = paramName.toLowerCase();
+        const normalizedParamName = param.name.toLowerCase();
 
-        if (normalizedParamName === normalizedSearchName ||
-            normalizedParamName.includes(normalizedSearchName) ||
-            normalizedSearchName.includes(normalizedParamName)) {
-          // Found a match!  Update the component to use the parameter ID
-          return {
-            ...component,
-            parameterId: param.id,
-            properties: {
-              ...component.properties,
-              min: param.min ?? component.properties.min,
-              max: param.max ?? component.properties.max,
-              value: param.value ?? component.properties.value,
-            },
-          };
+        // Direct match
+        if (normalizedParamName === cleanedParamName) {
+          return mapComponentToParameter(component, param);
+        }
+
+        // Alias match
+        for (const [canonical, aliases] of Object.entries(parameterAliases)) {
+          if (normalizedParamName === canonical.toLowerCase() &&
+              aliases.includes(cleanedParamName)) {
+            return mapComponentToParameter(component, param);
+          }
+        }
+
+        // Partial match (contains)
+        if (normalizedParamName.includes(cleanedParamName) ||
+            cleanedParamName.includes(normalizedParamName)) {
+          return mapComponentToParameter(component, param);
         }
       }
     }

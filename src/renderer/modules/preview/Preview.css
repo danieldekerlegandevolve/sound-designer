@@ -1,10 +1,10 @@
 .preview {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   height: 100%;
   background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  padding: 40px;
+  padding: 40px 40px 20px 40px;
   overflow: auto;
 }
 
