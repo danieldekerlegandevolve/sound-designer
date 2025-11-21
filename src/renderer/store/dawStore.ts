@@ -35,6 +35,9 @@ interface DAWState {
   assignPlugin: (trackId: string, pluginProject: PluginProject) => void;
   removePlugin: (trackId: string) => void;
   updatePluginParameter: (trackId: string, nodeId: string, parameterId: string, value: number) => void;
+  addEffect: (trackId: string, pluginProject: PluginProject) => void;
+  removeEffect: (trackId: string, effectIndex: number) => void;
+  updateEffectParameter: (trackId: string, effectIndex: number, nodeId: string, parameterId: string, value: number) => void;
 
   // Clip actions
   addClip: (trackId: string, startTime: number, duration?: number) => void;
@@ -179,6 +182,58 @@ export const useDAWStore = create<DAWState>()(
       if (!track || !track.pluginState) return;
 
       const param = track.pluginState.parameters.find(
+        p => p.nodeId === nodeId && p.parameterId === parameterId
+      );
+
+      if (param) {
+        param.value = value;
+        state.isDirty = true;
+      }
+    }),
+
+    addEffect: (trackId, pluginProject) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      // Create effect state with default parameter values
+      const parameters: PluginParameterState[] = [];
+
+      pluginProject.dspGraph.nodes.forEach(node => {
+        if (node.parameters) {
+          node.parameters.forEach(param => {
+            parameters.push({
+              nodeId: node.id,
+              parameterId: param.id,
+              value: param.default,
+            });
+          });
+        }
+      });
+
+      const effectState: PluginState = {
+        pluginProjectId: pluginProject.id,
+        pluginName: pluginProject.name,
+        parameters,
+      };
+
+      track.effects.push(effectState);
+      state.isDirty = true;
+    }),
+
+    removeEffect: (trackId, effectIndex) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track || effectIndex < 0 || effectIndex >= track.effects.length) return;
+
+      track.effects.splice(effectIndex, 1);
+      state.isDirty = true;
+    }),
+
+    updateEffectParameter: (trackId, effectIndex, nodeId, parameterId, value) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track || effectIndex < 0 || effectIndex >= track.effects.length) return;
+
+      const effect = track.effects[effectIndex];
+      const param = effect.parameters.find(
         p => p.nodeId === nodeId && p.parameterId === parameterId
       );
 

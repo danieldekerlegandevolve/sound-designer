@@ -57,7 +57,8 @@ export interface DAWTrack {
   name: string;
   type: TrackType;
   pluginId?: string; // Reference to a plugin project ID (deprecated - use pluginState)
-  pluginState?: PluginState; // Plugin instance state with parameters
+  pluginState?: PluginState; // Plugin instance state with parameters (for instruments)
+  effects: PluginState[]; // Effect plugin chain (for insert effects)
   volume: number; // 0-2 (1 = 100%, 2 = +6dB)
   pan: number; // -1 (left) to 1 (right)
   mute: boolean;
@@ -165,6 +166,7 @@ export function createTrack(
     name: name || `${type === 'master' ? 'Master' : type === 'instrument' ? 'Instrument' : 'Audio'} ${order + 1}`,
     type,
     pluginId: undefined,
+    effects: [], // Initialize with empty effects chain
     volume: 1,
     pan: 0,
     mute: false,
