@@ -455,10 +455,17 @@ export const useProjectStore = create<ProjectState>()(
 
           // Also save to plugin database
           try {
-            await window.electronAPI.savePluginToDB(project);
+            const dbResult = await window.electronAPI.savePluginToDB(project);
+            if (dbResult.success) {
+              console.log('Plugin saved to database:', project.name);
+            } else {
+              console.error('Failed to save to plugin database:', dbResult.error);
+            }
           } catch (error) {
             console.error('Failed to save to plugin database:', error);
           }
+        } else {
+          console.error('Failed to save project:', result.error);
         }
       }
     },
@@ -472,10 +479,17 @@ export const useProjectStore = create<ProjectState>()(
 
           // Also save to plugin database
           try {
-            await window.electronAPI.savePluginToDB(project);
+            const dbResult = await window.electronAPI.savePluginToDB(project);
+            if (dbResult.success) {
+              console.log('Plugin saved to database:', project.name);
+            } else {
+              console.error('Failed to save to plugin database:', dbResult.error);
+            }
           } catch (error) {
             console.error('Failed to save to plugin database:', error);
           }
+        } else {
+          console.error('Failed to save project:', result.error);
         }
       }
     },
