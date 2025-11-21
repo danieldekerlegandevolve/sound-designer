@@ -28,4 +28,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // System
   getAppPath: (name: string) =>
     ipcRenderer.invoke('get-app-path', name),
+
+  // Plugin database
+  savePluginToDB: (pluginProject: any) =>
+    ipcRenderer.invoke('save-plugin-to-db', pluginProject),
+  getPluginFromDB: (id: string) =>
+    ipcRenderer.invoke('get-plugin-from-db', id),
+  listPlugins: (options?: any) =>
+    ipcRenderer.invoke('list-plugins', options),
+  deletePluginFromDB: (id: string) =>
+    ipcRenderer.invoke('delete-plugin-from-db', id),
+  searchPlugins: (query: string) =>
+    ipcRenderer.invoke('search-plugins', query),
+  getAllTags: () =>
+    ipcRenderer.invoke('get-all-tags'),
 });

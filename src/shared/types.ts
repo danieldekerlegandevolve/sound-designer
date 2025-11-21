@@ -11,6 +11,7 @@ export interface PluginProject {
   code: CodeFiles;
   settings: PluginSettings;
   metadata?: ProjectMetadata;
+  tags?: string[];
 }
 
 export interface ProjectMetadata {

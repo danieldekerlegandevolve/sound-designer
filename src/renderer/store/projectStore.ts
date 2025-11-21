@@ -452,6 +452,13 @@ export const useProjectStore = create<ProjectState>()(
         );
         if (result.success) {
           set({ isDirty: false, currentFilePath: result.path || null });
+
+          // Also save to plugin database
+          try {
+            await window.electronAPI.savePluginToDB(project);
+          } catch (error) {
+            console.error('Failed to save to plugin database:', error);
+          }
         }
       }
     },
@@ -462,6 +469,13 @@ export const useProjectStore = create<ProjectState>()(
         const result = await window.electronAPI.saveProject(project);
         if (result.success) {
           set({ isDirty: false, currentFilePath: result.path || null });
+
+          // Also save to plugin database
+          try {
+            await window.electronAPI.savePluginToDB(project);
+          } catch (error) {
+            console.error('Failed to save to plugin database:', error);
+          }
         }
       }
     },
