@@ -11,10 +11,12 @@ interface TrackProps {
 }
 
 export function Track({ track }: TrackProps) {
-  const { updateTrack, removeTrack, selectedTrackId, selectTrack, assignPlugin, removePlugin } = useDAWStore();
+  const { updateTrack, removeTrack, selectedTrackId, selectTrack, assignPlugin, removePlugin, addEffect, removeEffect } = useDAWStore();
   const [expanded, setExpanded] = useState(false);
   const [showPluginBrowser, setShowPluginBrowser] = useState(false);
+  const [showEffectBrowser, setShowEffectBrowser] = useState(false);
   const [showPluginEditor, setShowPluginEditor] = useState(false);
+  const [editingEffectIndex, setEditingEffectIndex] = useState<number | null>(null);
 
   const isSelected = selectedTrackId === track.id;
   const isMaster = track.type === 'master';
@@ -169,6 +171,62 @@ export function Track({ track }: TrackProps) {
             </div>
           )}
 
+          {/* Effects Section */}
+          {!isMaster && (
+            <div className="track-plugin-section">
+              <div className="plugin-section-header">
+                <span className="section-label">Effects</span>
+                <button
+                  className="add-effect-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEffectBrowser(true);
+                  }}
+                  title="Add Effect"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+
+              {track.effects.length === 0 ? (
+                <div className="effects-empty">No effects</div>
+              ) : (
+                <div className="effects-chain">
+                  {track.effects.map((effect, index) => (
+                    <div key={index} className="effect-item">
+                      <div className="effect-order">{index + 1}</div>
+                      <div className="effect-name">{effect.pluginName}</div>
+                      <div className="effect-actions">
+                        <button
+                          className="plugin-action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingEffectIndex(index);
+                          }}
+                          title="Edit Effect Parameters"
+                        >
+                          <Settings size={12} />
+                        </button>
+                        <button
+                          className="plugin-action-btn remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Remove effect "${effect.pluginName}"?`)) {
+                              removeEffect(track.id, index);
+                            }
+                          }}
+                          title="Remove Effect"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {!isMaster && (
             <button
               className="track-delete"
@@ -198,11 +256,31 @@ export function Track({ track }: TrackProps) {
         />
       )}
 
+      {/* Effect Browser Modal */}
+      {showEffectBrowser && (
+        <PluginBrowser
+          onSelect={(pluginProject) => {
+            addEffect(track.id, pluginProject);
+            setShowEffectBrowser(false);
+          }}
+          onClose={() => setShowEffectBrowser(false)}
+        />
+      )}
+
       {/* Plugin Editor Modal */}
       {showPluginEditor && hasPlugin && (
         <PluginEditor
           trackId={track.id}
           onClose={() => setShowPluginEditor(false)}
+        />
+      )}
+
+      {/* Effect Editor Modal */}
+      {editingEffectIndex !== null && track.effects[editingEffectIndex] && (
+        <PluginEditor
+          trackId={track.id}
+          effectIndex={editingEffectIndex}
+          onClose={() => setEditingEffectIndex(null)}
         />
       )}
     </>

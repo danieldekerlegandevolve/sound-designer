@@ -6,22 +6,24 @@ import './PluginEditor.css';
 
 interface PluginEditorProps {
   trackId: string;
+  effectIndex?: number; // If provided, edit effect instead of main plugin
   onClose: () => void;
 }
 
-export function PluginEditor({ trackId, onClose }: PluginEditorProps) {
-  const { project, updatePluginParameter } = useDAWStore();
+export function PluginEditor({ trackId, effectIndex, onClose }: PluginEditorProps) {
+  const { project, updatePluginParameter, updateEffectParameter } = useDAWStore();
   const [pluginProject, setPluginProject] = useState<PluginProject | null>(null);
   const [loading, setLoading] = useState(true);
 
   const track = project.tracks.find(t => t.id === trackId);
+  const pluginState = effectIndex !== undefined ? track?.effects[effectIndex] : track?.pluginState;
 
   useEffect(() => {
     loadPluginProject();
-  }, [trackId]);
+  }, [trackId, effectIndex]);
 
   const loadPluginProject = async () => {
-    if (!track?.pluginState) {
+    if (!pluginState) {
       setLoading(false);
       return;
     }
@@ -31,7 +33,7 @@ export function PluginEditor({ trackId, onClose }: PluginEditorProps) {
       const result = await window.electronAPI.getRecentProjects();
       if (result.success) {
         const found = result.projects.find(
-          (p: any) => p.project.id === track.pluginState?.pluginProjectId
+          (p: any) => p.project.id === pluginState?.pluginProjectId
         );
         if (found) {
           setPluginProject(found.project);
@@ -45,17 +47,21 @@ export function PluginEditor({ trackId, onClose }: PluginEditorProps) {
   };
 
   const getParameterValue = (nodeId: string, parameterId: string): number => {
-    const param = track?.pluginState?.parameters.find(
+    const param = pluginState?.parameters.find(
       p => p.nodeId === nodeId && p.parameterId === parameterId
     );
     return param?.value ?? 0;
   };
 
   const handleParameterChange = (nodeId: string, parameterId: string, value: number) => {
-    updatePluginParameter(trackId, nodeId, parameterId, value);
+    if (effectIndex !== undefined) {
+      updateEffectParameter(trackId, effectIndex, nodeId, parameterId, value);
+    } else {
+      updatePluginParameter(trackId, nodeId, parameterId, value);
+    }
   };
 
-  if (!track || !track.pluginState) {
+  if (!track || !pluginState) {
     return null;
   }
 
@@ -100,8 +106,10 @@ export function PluginEditor({ trackId, onClose }: PluginEditorProps) {
       <div className="plugin-editor" onClick={(e) => e.stopPropagation()}>
         <div className="plugin-editor-header">
           <div>
-            <h2>{track.pluginState.pluginName}</h2>
-            <p className="plugin-editor-subtitle">Plugin Parameters</p>
+            <h2>{pluginState.pluginName}</h2>
+            <p className="plugin-editor-subtitle">
+              {effectIndex !== undefined ? `Effect #${effectIndex + 1} Parameters` : 'Plugin Parameters'}
+            </p>
           </div>
           <button className="close-button" onClick={onClose}>
             <X size={18} />
