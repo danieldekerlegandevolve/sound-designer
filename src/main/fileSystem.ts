@@ -89,11 +89,30 @@ export async function loadProject(filePath?: string): Promise<{ project: PluginP
   return { project, path: targetPath };
 }
 
-// Get recent projects
-export async function getRecentProjects(): Promise<Array<{ path: string; name: string; updatedAt: string }>> {
+// Get recent projects with full project data
+export async function getRecentProjects(): Promise<Array<{ path: string; name: string; updatedAt: string; lastOpened: number; project: PluginProject }>> {
   try {
     const content = await fs.readFile(RECENT_PROJECTS_FILE, 'utf-8');
-    return JSON.parse(content);
+    const recentPaths = JSON.parse(content) as Array<{ path: string; name: string; updatedAt: string }>;
+
+    const projectsWithData = await Promise.all(
+      recentPaths.map(async (item) => {
+        try {
+          const fileContent = await fs.readFile(item.path, 'utf-8');
+          const project = JSON.parse(fileContent) as PluginProject;
+          return {
+            ...item,
+            project,
+            lastOpened: new Date(item.updatedAt).getTime(),
+          };
+        } catch (error) {
+          console.warn(`Failed to load project: ${item.path}`, error);
+          return null;
+        }
+      })
+    );
+
+    return projectsWithData.filter(Boolean) as Array<{ path: string; name: string; updatedAt: string; lastOpened: number; project: PluginProject }>;
   } catch (error) {
     return [];
   }
@@ -101,7 +120,14 @@ export async function getRecentProjects(): Promise<Array<{ path: string; name: s
 
 // Add to recent projects
 async function addToRecentProjects(filePath: string, name: string) {
-  const recent = await getRecentProjects();
+  // Read the recent projects metadata (not full data)
+  let recent: Array<{ path: string; name: string; updatedAt: string }> = [];
+  try {
+    const content = await fs.readFile(RECENT_PROJECTS_FILE, 'utf-8');
+    recent = JSON.parse(content);
+  } catch (error) {
+    // File doesn't exist yet, start with empty array
+  }
 
   // Remove if already exists
   const filtered = recent.filter((item) => item.path !== filePath);
