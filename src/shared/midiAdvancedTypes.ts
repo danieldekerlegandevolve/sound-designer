@@ -4,7 +4,7 @@
  * Types for MIDI learn, MPE, arpeggiator, note effects, and CC automation
  */
 
-import { MIDIMessage } from './midiTypes';
+// import { MIDIMessage } from './midiTypes';
 
 // ============================================
 // MIDI Learn & Mapping

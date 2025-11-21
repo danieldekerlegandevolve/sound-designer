@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useDAWStore } from '../../store/dawStore';
 import { DAWTrack } from '@shared/dawTypes';
-import { useProjectStore } from '../../store/projectStore';
 import './Track.css';
 
 interface TrackProps {
@@ -11,7 +10,6 @@ interface TrackProps {
 
 export function Track({ track }: TrackProps) {
   const { updateTrack, removeTrack, selectedTrackId, selectTrack } = useDAWStore();
-  const { projects } = useProjectStore();
   const [expanded, setExpanded] = useState(false);
 
   const isSelected = selectedTrackId === track.id;
@@ -47,10 +45,8 @@ export function Track({ track }: TrackProps) {
     return `R${Math.round(pan * 100)}`;
   };
 
-  // Get plugin name if assigned
-  const pluginName = track.pluginId
-    ? projects.find(p => p.id === track.pluginId)?.name || 'Unknown Plugin'
-    : 'No plugin';
+  // Get plugin name if assigned (TODO: implement plugin selection in Phase 3)
+  const pluginName = track.pluginId ? 'Plugin Assigned' : 'No plugin';
 
   return (
     <div
