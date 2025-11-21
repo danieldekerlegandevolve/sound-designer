@@ -87,11 +87,12 @@ private:
 
 export function generateEnhancedProcessorImplementation(project: PluginProject): string {
   const className = project.name.replace(/\s+/g, '') + 'AudioProcessor';
+  const pluginName = project.name.replace(/\s+/g, '');
   const parameters = extractParameters(project);
   const hasMidi = checkMidiUsage(project);
 
-  return `#include "PluginProcessor.h"
-#include "PluginEditor.h"
+  return `#include "${pluginName}Processor.h"
+#include "${pluginName}Editor.h"
 
 //==============================================================================
 ${className}::${className}()
@@ -473,8 +474,8 @@ juce_add_plugin(${pluginName}
 # Source files
 target_sources(${pluginName}
     PRIVATE
-        Source/PluginProcessor.cpp
-        Source/PluginEditor.cpp
+        ${pluginName}/${pluginName}Processor.cpp
+        ${pluginName}/${pluginName}Editor.cpp
 )
 
 # JUCE modules

@@ -1,7 +1,9 @@
 import React from 'react';
 import { useProjectStore } from './store/projectStore';
+import { useToastStore } from './store/toastStore';
 import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
+import { ToastContainer } from './components/Toast';
 import { UIDesigner } from './modules/ui-designer/UIDesigner';
 import { DSPDesigner } from './modules/dsp-designer/DSPDesigner';
 import { CodeEditor } from './modules/code-editor/CodeEditor';
@@ -12,6 +14,25 @@ import './App.css';
 
 export function App() {
   const selectedMode = useProjectStore((state) => state.selectedMode);
+  const isDirty = useProjectStore((state) => state.isDirty);
+  const autoSaveEnabled = useProjectStore((state) => state.autoSaveEnabled);
+  const saveProject = useProjectStore((state) => state.saveProject);
+  const currentFilePath = useProjectStore((state) => state.currentFilePath);
+  const toasts = useToastStore((state) => state.toasts);
+  const removeToast = useToastStore((state) => state.removeToast);
+
+  // Autosave every 30 seconds if enabled and dirty
+  React.useEffect(() => {
+    if (!autoSaveEnabled || !isDirty || !currentFilePath) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      saveProject();
+    }, 30000); // 30 seconds
+
+    return () => clearTimeout(timer);
+  }, [autoSaveEnabled, isDirty, currentFilePath, saveProject]);
 
   const renderEditor = () => {
     switch (selectedMode) {
@@ -40,6 +61,7 @@ export function App() {
           {renderEditor()}
         </main>
       </div>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

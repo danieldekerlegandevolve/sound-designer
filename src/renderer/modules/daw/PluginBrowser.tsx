@@ -27,8 +27,8 @@ export function PluginBrowser({ onSelect, onClose }: PluginBrowserProps) {
   const loadPlugins = async () => {
     try {
       const result = await window.electronAPI.getRecentProjects();
-      if (result.success) {
-        setPlugins(result.projects);
+      if (result.success && result.data) {
+        setPlugins(result.data);
       }
     } catch (error) {
       console.error('Failed to load plugins:', error);

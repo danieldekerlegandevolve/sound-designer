@@ -151,8 +151,23 @@ ipcMain.handle('create-from-template', async (_, templateName) => {
 // Plugin export
 ipcMain.handle('export-plugin', async (_, exportConfig) => {
   try {
-    const result = await exportPlugin(exportConfig);
-    return { success: true, path: result.outputPath };
+    // Prompt user to select output directory
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Select Export Directory',
+      buttonLabel: 'Export Here',
+    });
+
+    if (result.canceled || !result.filePaths.length) {
+      return { success: false, error: 'Export canceled by user' };
+    }
+
+    const outputPath = result.filePaths[0];
+    exportConfig.config.outputPath = outputPath;
+
+    const exportResult = await exportPlugin(exportConfig);
+    return { success: true, path: exportResult.outputPath };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

@@ -3,6 +3,7 @@ import { useProjectStore } from '../store/projectStore';
 import { SettingsDialog } from './SettingsDialog';
 import { TemplateBrowser } from './TemplateBrowser';
 import { PluginLibrary } from './PluginLibrary';
+import { ExportDialog } from './ExportDialog';
 import {
   LayoutDashboard,
   GitBranch,
@@ -47,6 +48,8 @@ export function Toolbar() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
   const [showPluginLibrary, setShowPluginLibrary] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'vst3' | 'au' | 'web' | 'standalone'>('vst3');
 
   const modes = [
     { id: 'ui' as const, label: 'UI Designer', icon: LayoutDashboard },
@@ -188,19 +191,19 @@ export function Toolbar() {
                 onClick={() => setShowExportMenu(false)}
               />
               <div className="dropdown-menu">
-                <button className="menu-item">
+                <button className="menu-item" onClick={() => { setExportFormat('vst3'); setShowExportDialog(true); setShowExportMenu(false); }}>
                   <FileDown size={16} />
                   <span>Export as VST3...</span>
                 </button>
-                <button className="menu-item">
+                <button className="menu-item" onClick={() => { setExportFormat('au'); setShowExportDialog(true); setShowExportMenu(false); }}>
                   <FileDown size={16} />
                   <span>Export as AU...</span>
                 </button>
-                <button className="menu-item">
+                <button className="menu-item" onClick={() => { setExportFormat('web'); setShowExportDialog(true); setShowExportMenu(false); }}>
                   <FileDown size={16} />
                   <span>Export as Web App...</span>
                 </button>
-                <button className="menu-item">
+                <button className="menu-item" onClick={() => { setExportFormat('standalone'); setShowExportDialog(true); setShowExportMenu(false); }}>
                   <FileDown size={16} />
                   <span>Export as Standalone...</span>
                 </button>
@@ -221,6 +224,7 @@ export function Toolbar() {
       <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <TemplateBrowser isOpen={showTemplateBrowser} onClose={() => setShowTemplateBrowser(false)} />
       <PluginLibrary isOpen={showPluginLibrary} onClose={() => setShowPluginLibrary(false)} />
+      <ExportDialog isOpen={showExportDialog} onClose={() => setShowExportDialog(false)} initialFormat={exportFormat} />
     </div>
   );
 }

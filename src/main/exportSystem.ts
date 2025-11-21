@@ -77,35 +77,39 @@ async function exportNativePlugin(
   // Generate JUCE project using enhanced generator
   const juceProject = generateJUCEProject(project, config);
 
+  // Use plugin name for directory and file names
+  const pluginName = project.name.replace(/\s+/g, '');
+
   // Write JUCE project files
-  const projectPath = path.join(outputDir, `${project.name}.jucer`);
+  const projectPath = path.join(outputDir, `${pluginName}.jucer`);
   await fs.writeFile(projectPath, juceProject.jucer, 'utf-8');
 
-  // Write source files
-  const srcDir = path.join(outputDir, 'Source');
+  // Write source files - use plugin name for directory
+  const srcDir = path.join(outputDir, pluginName);
   await fs.mkdir(srcDir, { recursive: true });
 
   // Use enhanced code generation
   const processorHeader = generateEnhancedProcessorHeader(project);
   const processorImpl = generateEnhancedProcessorImplementation(project);
 
+  // Use plugin name for file names
   await fs.writeFile(
-    path.join(srcDir, 'PluginProcessor.h'),
+    path.join(srcDir, `${pluginName}Processor.h`),
     processorHeader,
     'utf-8'
   );
   await fs.writeFile(
-    path.join(srcDir, 'PluginProcessor.cpp'),
+    path.join(srcDir, `${pluginName}Processor.cpp`),
     processorImpl,
     'utf-8'
   );
   await fs.writeFile(
-    path.join(srcDir, 'PluginEditor.h'),
+    path.join(srcDir, `${pluginName}Editor.h`),
     juceProject.editorHeader,
     'utf-8'
   );
   await fs.writeFile(
-    path.join(srcDir, 'PluginEditor.cpp'),
+    path.join(srcDir, `${pluginName}Editor.cpp`),
     juceProject.editorImpl,
     'utf-8'
   );
@@ -135,11 +139,11 @@ function generateJUCEProject(project: PluginProject, config: ExportConfig) {
               version="${project.version}" bundleIdentifier="com.sounddesigner.${pluginName}"
               includeBinaryInAppConfig="1" cppLanguageStandard="17">
   <MAINGROUP id="MainGroup" name="${project.name}">
-    <GROUP id="Source" name="Source">
-      <FILE id="PluginProcessor" name="PluginProcessor.cpp" compile="1" resource="0"/>
-      <FILE id="PluginProcessor2" name="PluginProcessor.h" compile="0" resource="0"/>
-      <FILE id="PluginEditor" name="PluginEditor.cpp" compile="1" resource="0"/>
-      <FILE id="PluginEditor2" name="PluginEditor.h" compile="0" resource="0"/>
+    <GROUP id="${pluginName}" name="${pluginName}">
+      <FILE id="${pluginName}Processor" name="${pluginName}Processor.cpp" compile="1" resource="0"/>
+      <FILE id="${pluginName}Processor2" name="${pluginName}Processor.h" compile="0" resource="0"/>
+      <FILE id="${pluginName}Editor" name="${pluginName}Editor.cpp" compile="1" resource="0"/>
+      <FILE id="${pluginName}Editor2" name="${pluginName}Editor.h" compile="0" resource="0"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
@@ -242,9 +246,10 @@ private:
 
 function generateProcessorImplementation(project: PluginProject): string {
   const className = project.name.replace(/\s+/g, '') + 'AudioProcessor';
+  const pluginName = project.name.replace(/\s+/g, '');
 
-  return `#include "PluginProcessor.h"
-#include "PluginEditor.h"
+  return `#include "${pluginName}Processor.h"
+#include "${pluginName}Editor.h"
 
 ${className}::${className}()
     : AudioProcessor (BusesProperties()
@@ -373,11 +378,12 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 function generateEditorHeader(project: PluginProject): string {
   const className = project.name.replace(/\s+/g, '') + 'AudioProcessorEditor';
   const processorClass = project.name.replace(/\s+/g, '') + 'AudioProcessor';
+  const pluginName = project.name.replace(/\s+/g, '');
 
   return `#pragma once
 
 #include <JuceHeader.h>
-#include "PluginProcessor.h"
+#include "${pluginName}Processor.h"
 
 class ${className} : public juce::AudioProcessorEditor
 {
@@ -400,9 +406,10 @@ private:
 function generateEditorImplementation(project: PluginProject): string {
   const className = project.name.replace(/\s+/g, '') + 'AudioProcessorEditor';
   const processorClass = project.name.replace(/\s+/g, '') + 'AudioProcessor';
+  const pluginName = project.name.replace(/\s+/g, '');
 
-  return `#include "PluginProcessor.h"
-#include "PluginEditor.h"
+  return `#include "${pluginName}Processor.h"
+#include "${pluginName}Editor.h"
 
 ${className}::${className} (${processorClass}& p)
     : AudioProcessorEditor (&p), audioProcessor (p)

@@ -444,38 +444,73 @@ export const useProjectStore = create<ProjectState>()(
 
     // Project actions
     saveProject: async (filePath?) => {
-      const { project, currentFilePath } = get();
-      if (window.electronAPI) {
-        const result = await window.electronAPI.saveProject(
-          project,
-          filePath || currentFilePath || undefined
-        );
-        if (result.success) {
-          set({ isDirty: false, currentFilePath: result.path || null });
+      const state = get();
+      const { currentFilePath, saveProjectAs } = state;
 
-          // Also save to plugin database
-          try {
-            await window.electronAPI.savePluginToDB(project);
-          } catch (error) {
-            console.error('Failed to save to plugin database:', error);
+      // If no file path exists, open Save As dialog
+      if (!filePath && !currentFilePath) {
+        return saveProjectAs();
+      }
+
+      if (window.electronAPI) {
+        try {
+          // Extract project and serialize to plain object via JSON
+          // This strips any Immer proxies or non-serializable objects
+          const projectJSON = JSON.stringify(state.project);
+          const plainProject = JSON.parse(projectJSON);
+
+          const result = await window.electronAPI.saveProject(
+            plainProject,
+            filePath || currentFilePath || undefined
+          );
+
+          if (result.success) {
+            set({ isDirty: false, currentFilePath: result.path || null });
+            import('./toastStore').then(({ toast }) => {
+              toast.success(`Saved "${state.project.name}"`, 2000);
+            });
+          } else {
+            console.error('Failed to save project:', result.error);
+            import('./toastStore').then(({ toast }) => {
+              toast.error(`Save failed: ${result.error}`, 4000);
+            });
           }
+        } catch (error: any) {
+          console.error('Failed to save project:', error);
+          import('./toastStore').then(({ toast }) => {
+            toast.error(`Save failed: ${error.message || 'Unknown error'}`, 4000);
+          });
         }
       }
     },
 
     saveProjectAs: async () => {
-      const { project } = get();
+      const state = get();
       if (window.electronAPI) {
-        const result = await window.electronAPI.saveProject(project);
-        if (result.success) {
-          set({ isDirty: false, currentFilePath: result.path || null });
+        try {
+          // Extract project and serialize to plain object via JSON
+          // This strips any Immer proxies or non-serializable objects
+          const projectJSON = JSON.stringify(state.project);
+          const plainProject = JSON.parse(projectJSON);
 
-          // Also save to plugin database
-          try {
-            await window.electronAPI.savePluginToDB(project);
-          } catch (error) {
-            console.error('Failed to save to plugin database:', error);
+          const result = await window.electronAPI.saveProject(plainProject);
+
+          if (result.success) {
+            set({ isDirty: false, currentFilePath: result.path || null });
+            import('./toastStore').then(({ toast }) => {
+              toast.success(`Saved "${state.project.name}"`, 2000);
+            });
+          } else {
+            console.error('Failed to save project:', result.error);
+            import('./toastStore').then(({ toast }) => {
+              toast.error(`Save failed: ${result.error}`, 4000);
+            });
           }
+        } catch (error: any) {
+          console.error('Failed to save project:', error);
+          import('./toastStore').then(({ toast }) => {
+            toast.error(`Save failed: ${error.message || 'Unknown error'}`, 4000);
+          });
         }
       }
     },
