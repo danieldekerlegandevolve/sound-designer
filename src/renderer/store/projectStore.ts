@@ -445,47 +445,28 @@ export const useProjectStore = create<ProjectState>()(
 
     // Project actions
     saveProject: async (filePath?) => {
-      const { project, currentFilePath } = get();
+      const { project, currentFilePath, saveProjectAs } = get();
+
+      // If no file path exists, open Save As dialog
+      if (!filePath && !currentFilePath) {
+        return saveProjectAs();
+      }
+
       if (window.electronAPI) {
         try {
-          console.log('Starting save...', { name: project.name, hasPath: !!currentFilePath });
-
           // Sanitize project for IPC transfer
-          console.log('Sanitizing project...');
           const sanitizedProject = sanitizeProjectForIPC(project);
-          console.log('Sanitization complete');
 
-          console.log('Calling IPC save...');
           const result = await window.electronAPI.saveProject(
             sanitizedProject,
             filePath || currentFilePath || undefined
           );
-          console.log('IPC save result:', result);
 
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
-
-            // Also save to plugin database
-            try {
-              const dbResult = await window.electronAPI.savePluginToDB(sanitizedProject);
-              if (dbResult.success) {
-                console.log('Plugin saved to database:', project.name);
-                // Import toast dynamically to avoid circular dependency
-                import('./toastStore').then(({ toast }) => {
-                  toast.success(`Saved "${project.name}"`, 2000);
-                });
-              } else {
-                console.error('Failed to save to plugin database:', dbResult.error);
-                import('./toastStore').then(({ toast }) => {
-                  toast.warning(`File saved, but database save failed`, 3000);
-                });
-              }
-            } catch (error) {
-              console.error('Failed to save to plugin database:', error);
-              import('./toastStore').then(({ toast }) => {
-                toast.warning(`File saved, but database save failed`, 3000);
-              });
-            }
+            import('./toastStore').then(({ toast }) => {
+              toast.success(`Saved "${project.name}"`, 2000);
+            });
           } else {
             console.error('Failed to save project:', result.error);
             import('./toastStore').then(({ toast }) => {
@@ -512,27 +493,9 @@ export const useProjectStore = create<ProjectState>()(
 
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
-
-            // Also save to plugin database
-            try {
-              const dbResult = await window.electronAPI.savePluginToDB(sanitizedProject);
-              if (dbResult.success) {
-                console.log('Plugin saved to database:', project.name);
-                import('./toastStore').then(({ toast }) => {
-                  toast.success(`Saved "${project.name}" as new file`, 2000);
-                });
-              } else {
-                console.error('Failed to save to plugin database:', dbResult.error);
-                import('./toastStore').then(({ toast }) => {
-                  toast.warning(`File saved, but database save failed`, 3000);
-                });
-              }
-            } catch (error) {
-              console.error('Failed to save to plugin database:', error);
-              import('./toastStore').then(({ toast }) => {
-                toast.warning(`File saved, but database save failed`, 3000);
-              });
-            }
+            import('./toastStore').then(({ toast }) => {
+              toast.success(`Saved "${project.name}"`, 2000);
+            });
           } else {
             console.error('Failed to save project:', result.error);
             import('./toastStore').then(({ toast }) => {

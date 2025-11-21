@@ -32,8 +32,8 @@ export function DAW() {
         if (track.pluginState) {
           try {
             const result = await window.electronAPI.getRecentProjects();
-            if (result.success) {
-              const found = result.projects.find(
+            if (result.success && result.data) {
+              const found = result.data.find(
                 (p: any) => p.project.id === track.pluginState?.pluginProjectId
               );
               if (found) {
