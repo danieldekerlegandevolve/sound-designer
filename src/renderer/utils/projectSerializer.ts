@@ -5,44 +5,134 @@ import { PluginProject } from '@shared/types';
  * This ensures the project can be passed through Electron IPC without errors
  */
 export function sanitizeProjectForIPC(project: PluginProject): PluginProject {
-  // Create a deep copy and remove any non-serializable data
-  const sanitized = JSON.parse(JSON.stringify(project));
-  return sanitized;
+  try {
+    // Use structured clone if available (more reliable than JSON)
+    if (typeof structuredClone !== 'undefined') {
+      return structuredClone(project);
+    }
+
+    // Fallback to deep serialization
+    return deepSerialize(project) as PluginProject;
+  } catch (error) {
+    console.error('Error sanitizing project, attempting deep clean:', error);
+    // If all else fails, try JSON approach
+    try {
+      return JSON.parse(JSON.stringify(project));
+    } catch (jsonError) {
+      console.error('JSON serialization also failed:', jsonError);
+      throw new Error('Unable to serialize project data. Please check for circular references or complex objects.');
+    }
+  }
 }
 
 /**
- * Strips functions and other non-serializable objects from any object
+ * Deep serializes an object, handling edge cases that JSON.stringify misses
  */
 export function deepSerialize<T>(obj: T): T {
+  // Handle primitives
   if (obj === null || obj === undefined) {
     return obj;
   }
 
-  if (typeof obj === 'function') {
+  const type = typeof obj;
+
+  if (type === 'string' || type === 'number' || type === 'boolean') {
+    return obj;
+  }
+
+  if (type === 'function' || type === 'symbol') {
     return undefined as any;
+  }
+
+  // Handle Date objects
+  if (obj instanceof Date) {
+    return obj.toISOString() as any;
+  }
+
+  // Handle RegExp
+  if (obj instanceof RegExp) {
+    return obj.toString() as any;
+  }
+
+  // Handle Error objects
+  if (obj instanceof Error) {
+    return { message: obj.message, stack: obj.stack } as any;
+  }
+
+  // Handle Arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepSerialize(item)) as any;
+  }
+
+  // Handle plain objects
+  if (type === 'object') {
+    // Check if it's a plain object
+    const proto = Object.getPrototypeOf(obj);
+    if (proto !== null && proto !== Object.prototype) {
+      // Not a plain object, try to extract data
+      console.warn('Non-plain object detected, attempting to serialize:', obj);
+    }
+
+    const result: any = {};
+    const seen = new WeakSet();
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = (obj as any)[key];
+
+        // Skip functions
+        if (typeof value === 'function') {
+          continue;
+        }
+
+        // Handle circular references
+        if (value && typeof value === 'object' && !seen.has(value)) {
+          seen.add(value);
+          result[key] = deepSerialize(value);
+        } else if (value && typeof value === 'object' && seen.has(value)) {
+          // Circular reference detected, skip
+          console.warn(`Circular reference detected at key: ${key}`);
+          continue;
+        } else {
+          result[key] = deepSerialize(value);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  // Unknown type, return undefined
+  console.warn('Unknown type detected:', type, obj);
+  return undefined as any;
+}
+
+/**
+ * Creates a plain object representation of the project
+ * Ensures all nested objects are plain objects without prototypes
+ */
+export function toPlainObject<T>(obj: T): T {
+  if (obj === null || obj === undefined) {
+    return obj;
   }
 
   if (typeof obj !== 'object') {
     return obj;
   }
 
-  if (obj instanceof Date) {
-    return obj.toISOString() as any;
-  }
-
   if (Array.isArray(obj)) {
-    return obj.map(deepSerialize) as any;
+    return obj.map(toPlainObject) as any;
   }
 
-  const result: any = {};
+  const plain: any = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = (obj as any)[key];
       if (typeof value !== 'function') {
-        result[key] = deepSerialize(value);
+        plain[key] = toPlainObject(value);
       }
     }
   }
 
-  return result;
+  return plain;
 }

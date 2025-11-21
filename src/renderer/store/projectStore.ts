@@ -448,13 +448,19 @@ export const useProjectStore = create<ProjectState>()(
       const { project, currentFilePath } = get();
       if (window.electronAPI) {
         try {
-          // Sanitize project for IPC transfer
-          const sanitizedProject = sanitizeProjectForIPC(project);
+          console.log('Starting save...', { name: project.name, hasPath: !!currentFilePath });
 
+          // Sanitize project for IPC transfer
+          console.log('Sanitizing project...');
+          const sanitizedProject = sanitizeProjectForIPC(project);
+          console.log('Sanitization complete');
+
+          console.log('Calling IPC save...');
           const result = await window.electronAPI.saveProject(
             sanitizedProject,
             filePath || currentFilePath || undefined
           );
+          console.log('IPC save result:', result);
 
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
