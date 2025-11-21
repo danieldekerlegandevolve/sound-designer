@@ -168,7 +168,7 @@ export function Toolbar() {
         {/* Quick Save */}
         <button
           className={`toolbar-btn ${isDirty ? 'highlight' : ''}`}
-          onClick={saveProject}
+          onClick={() => { saveProject(); }}
           title="Save Project (Ctrl+S)"
         >
           <Save size={18} />
