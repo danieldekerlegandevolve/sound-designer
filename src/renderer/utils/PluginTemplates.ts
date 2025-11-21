@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import type { PluginProject } from '@shared/types';
+import { getDefaultParametersForNodeType } from './DSPNodeDefaults';
 
 export interface PluginTemplate {
   id: string;
@@ -1362,12 +1363,34 @@ export function searchTemplates(query: string): PluginTemplate[] {
 
 // Create project from template
 export function createProjectFromTemplate(template: PluginTemplate): PluginProject {
+  const clonedGraph = JSON.parse(JSON.stringify(template.project.dspGraph));
+
+  // Ensure all DSP nodes have proper parameter arrays
+  clonedGraph.nodes = clonedGraph.nodes.map((node: any) => {
+    // If parameters is an object (old format), convert to array using defaults
+    if (node.parameters && !Array.isArray(node.parameters)) {
+      return {
+        ...node,
+        parameters: getDefaultParametersForNodeType(node.type),
+      };
+    }
+    // If parameters is missing or empty, add defaults
+    if (!node.parameters || node.parameters.length === 0) {
+      return {
+        ...node,
+        parameters: getDefaultParametersForNodeType(node.type),
+      };
+    }
+    // Parameters is already an array, keep it
+    return node;
+  });
+
   return {
     ...template.project,
     id: nanoid(),
     // Deep clone to avoid reference issues
     uiComponents: JSON.parse(JSON.stringify(template.project.uiComponents)),
-    dspGraph: JSON.parse(JSON.stringify(template.project.dspGraph)),
+    dspGraph: clonedGraph,
     code: { ...template.project.code },
     settings: { ...template.project.settings },
   };
