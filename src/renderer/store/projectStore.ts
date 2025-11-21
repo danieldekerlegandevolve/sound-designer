@@ -454,11 +454,11 @@ export const useProjectStore = create<ProjectState>()(
 
       if (window.electronAPI) {
         try {
-          // Sanitize project for IPC transfer
-          const sanitizedProject = sanitizeProjectForIPC(project);
+          // Convert to plain object by JSON round-trip to remove Immer proxies
+          const plainProject = JSON.parse(JSON.stringify(project));
 
           const result = await window.electronAPI.saveProject(
-            sanitizedProject,
+            plainProject,
             filePath || currentFilePath || undefined
           );
 
@@ -486,10 +486,10 @@ export const useProjectStore = create<ProjectState>()(
       const { project } = get();
       if (window.electronAPI) {
         try {
-          // Sanitize project for IPC transfer
-          const sanitizedProject = sanitizeProjectForIPC(project);
+          // Convert to plain object by JSON round-trip to remove Immer proxies
+          const plainProject = JSON.parse(JSON.stringify(project));
 
-          const result = await window.electronAPI.saveProject(sanitizedProject);
+          const result = await window.electronAPI.saveProject(plainProject);
 
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
