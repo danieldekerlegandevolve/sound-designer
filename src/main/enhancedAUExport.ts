@@ -127,12 +127,13 @@ export function generateAUInfoPlist(project: PluginProject, config: AUConfigurat
 
 export function generateAUFactoryCode(project: PluginProject, config: AUConfiguration): string {
   const className = project.name.replace(/\s+/g, '');
+  const pluginName = project.name.replace(/\s+/g, '');
 
   return `// Audio Unit Factory
 // macOS-specific AU component entry point
 
 #include <AudioUnit/AudioUnit.h>
-#include "PluginProcessor.h"
+#include "${pluginName}Processor.h"
 
 // Factory function
 extern "C" void* ${className}Factory(const AudioComponentDescription* inDesc)
