@@ -151,3 +151,99 @@
   background-color: #4a2f2f;
   border-color: #ff6b6b;
 }
+
+/* Plugin Section */
+.track-plugin-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #3e3e42;
+}
+
+.plugin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.section-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plugin-add-button {
+  width: 100%;
+  padding: 8px;
+  background-color: #2a2a2a;
+  border: 1px solid #4a9eff;
+  border-radius: 4px;
+  color: #4a9eff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plugin-add-button:hover {
+  background-color: #4a9eff;
+  color: white;
+}
+
+.plugin-assigned {
+  background-color: #2a2a2a;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.plugin-assigned-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plugin-assigned-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.plugin-assigned-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.plugin-action-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3a3a3a;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.plugin-action-btn:hover {
+  background-color: #4a4a4a;
+  color: #fff;
+  border-color: #5a5a5a;
+}
+
+.plugin-action-btn.remove {
+  color: #ff6b6b;
+}
+
+.plugin-action-btn.remove:hover {
+  background-color: #3a1f1f;
+  border-color: #ff6b6b;
+}

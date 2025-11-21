@@ -30,13 +30,34 @@ export interface MIDIClip {
 }
 
 /**
+ * Plugin Parameter State
+ * Stores the current value of a plugin parameter
+ */
+export interface PluginParameterState {
+  nodeId: string; // DSP node ID
+  parameterId: string; // Parameter ID within the node
+  value: number;
+}
+
+/**
+ * Plugin State
+ * Stores all parameter states for a plugin instance
+ */
+export interface PluginState {
+  pluginProjectId: string; // Reference to the plugin project
+  pluginName: string; // Plugin display name
+  parameters: PluginParameterState[]; // Current parameter values
+}
+
+/**
  * Audio Track
  */
 export interface DAWTrack {
   id: string;
   name: string;
   type: TrackType;
-  pluginId?: string; // Reference to a plugin project ID
+  pluginId?: string; // Reference to a plugin project ID (deprecated - use pluginState)
+  pluginState?: PluginState; // Plugin instance state with parameters
   volume: number; // 0-2 (1 = 100%, 2 = +6dB)
   pan: number; // -1 (left) to 1 (right)
   mute: boolean;

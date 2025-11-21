@@ -7,12 +7,15 @@ import {
   MIDINoteEvent,
   Transport,
   Timeline,
+  PluginState,
+  PluginParameterState,
   createDAWProject,
   createTrack,
   createMIDIClip,
   createMIDINote,
   TrackType,
 } from '@shared/dawTypes';
+import { PluginProject } from '@shared/types';
 
 interface DAWState {
   // Current project
@@ -29,6 +32,9 @@ interface DAWState {
   updateTrack: (id: string, updates: Partial<DAWTrack>) => void;
   reorderTrack: (id: string, newOrder: number) => void;
   selectTrack: (id: string | null) => void;
+  assignPlugin: (trackId: string, pluginProject: PluginProject) => void;
+  removePlugin: (trackId: string) => void;
+  updatePluginParameter: (trackId: string, nodeId: string, parameterId: string, value: number) => void;
 
   // Clip actions
   addClip: (trackId: string, startTime: number, duration?: number) => void;
@@ -126,6 +132,60 @@ export const useDAWStore = create<DAWState>()(
 
     selectTrack: (id) => set((state) => {
       state.selectedTrackId = id;
+    }),
+
+    assignPlugin: (trackId, pluginProject) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      // Create plugin state with default parameter values
+      const parameters: PluginParameterState[] = [];
+
+      pluginProject.dspGraph.nodes.forEach(node => {
+        if (node.parameters) {
+          node.parameters.forEach(param => {
+            parameters.push({
+              nodeId: node.id,
+              parameterId: param.id,
+              value: param.default,
+            });
+          });
+        }
+      });
+
+      track.pluginState = {
+        pluginProjectId: pluginProject.id,
+        pluginName: pluginProject.name,
+        parameters,
+      };
+
+      // Also set legacy pluginId for backward compatibility
+      track.pluginId = pluginProject.id;
+
+      state.isDirty = true;
+    }),
+
+    removePlugin: (trackId) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      track.pluginState = undefined;
+      track.pluginId = undefined;
+      state.isDirty = true;
+    }),
+
+    updatePluginParameter: (trackId, nodeId, parameterId, value) => set((state) => {
+      const track = state.project.tracks.find(t => t.id === trackId);
+      if (!track || !track.pluginState) return;
+
+      const param = track.pluginState.parameters.find(
+        p => p.nodeId === nodeId && p.parameterId === parameterId
+      );
+
+      if (param) {
+        param.value = value;
+        state.isDirty = true;
+      }
     }),
 
     // Clip actions

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Settings, Plus, X } from 'lucide-react';
 import { useDAWStore } from '../../store/dawStore';
 import { DAWTrack } from '@shared/dawTypes';
+import { PluginBrowser } from './PluginBrowser';
+import { PluginEditor } from './PluginEditor';
 import './Track.css';
 
 interface TrackProps {
@@ -9,8 +11,10 @@ interface TrackProps {
 }
 
 export function Track({ track }: TrackProps) {
-  const { updateTrack, removeTrack, selectedTrackId, selectTrack } = useDAWStore();
+  const { updateTrack, removeTrack, selectedTrackId, selectTrack, assignPlugin, removePlugin } = useDAWStore();
   const [expanded, setExpanded] = useState(false);
+  const [showPluginBrowser, setShowPluginBrowser] = useState(false);
+  const [showPluginEditor, setShowPluginEditor] = useState(false);
 
   const isSelected = selectedTrackId === track.id;
   const isMaster = track.type === 'master';
@@ -45,21 +49,23 @@ export function Track({ track }: TrackProps) {
     return `R${Math.round(pan * 100)}`;
   };
 
-  // Get plugin name if assigned (TODO: implement plugin selection in Phase 3)
-  const pluginName = track.pluginId ? 'Plugin Assigned' : 'No plugin';
+  // Get plugin name if assigned
+  const pluginName = track.pluginState?.pluginName || 'No plugin';
+  const hasPlugin = !!track.pluginState;
 
   return (
-    <div
-      className={`track ${isSelected ? 'selected' : ''}`}
-      onClick={() => selectTrack(track.id)}
-    >
-      <div className="track-color" style={{ backgroundColor: track.color }} />
+    <>
+      <div
+        className={`track ${isSelected ? 'selected' : ''}`}
+        onClick={() => selectTrack(track.id)}
+      >
+        <div className="track-color" style={{ backgroundColor: track.color }} />
 
-      <div className="track-header" onClick={() => setExpanded(!expanded)}>
-        <div className="track-name-container">
-          <div className="track-name">{track.name}</div>
-          {track.pluginId && <div className="track-plugin">{pluginName}</div>}
-        </div>
+        <div className="track-header" onClick={() => setExpanded(!expanded)}>
+          <div className="track-name-container">
+            <div className="track-name">{track.name}</div>
+            {hasPlugin && <div className="track-plugin">{pluginName}</div>}
+          </div>
 
         <div className="track-controls" onClick={(e) => e.stopPropagation()}>
           <button
@@ -111,6 +117,58 @@ export function Track({ track }: TrackProps) {
             </div>
           </div>
 
+          {/* Plugin Section */}
+          {!isMaster && track.type === 'instrument' && (
+            <div className="track-plugin-section">
+              <div className="plugin-section-header">
+                <span className="section-label">Plugin</span>
+              </div>
+
+              {hasPlugin ? (
+                <div className="plugin-assigned">
+                  <div className="plugin-assigned-info">
+                    <div className="plugin-assigned-name">{pluginName}</div>
+                    <div className="plugin-assigned-actions">
+                      <button
+                        className="plugin-action-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowPluginEditor(true);
+                        }}
+                        title="Edit Plugin Parameters"
+                      >
+                        <Settings size={14} />
+                      </button>
+                      <button
+                        className="plugin-action-btn remove"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remove plugin "${pluginName}"?`)) {
+                            removePlugin(track.id);
+                          }
+                        }}
+                        title="Remove Plugin"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  className="plugin-add-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPluginBrowser(true);
+                  }}
+                >
+                  <Plus size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                  Assign Plugin
+                </button>
+              )}
+            </div>
+          )}
+
           {!isMaster && (
             <button
               className="track-delete"
@@ -127,6 +185,26 @@ export function Track({ track }: TrackProps) {
           )}
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Plugin Browser Modal */}
+      {showPluginBrowser && (
+        <PluginBrowser
+          onSelect={(pluginProject) => {
+            assignPlugin(track.id, pluginProject);
+            setShowPluginBrowser(false);
+          }}
+          onClose={() => setShowPluginBrowser(false)}
+        />
+      )}
+
+      {/* Plugin Editor Modal */}
+      {showPluginEditor && hasPlugin && (
+        <PluginEditor
+          trackId={track.id}
+          onClose={() => setShowPluginEditor(false)}
+        />
+      )}
+    </>
   );
 }
