@@ -2,171 +2,300 @@ import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { useProjectStore } from '../../store/projectStore';
 import { UIComponent, DSPNode } from '@shared/types';
-import { generateDSPCode, generateUICode, generatePluginPreviewCode } from '../../utils/CodeGenerator';
+import { generatePluginPreviewCode } from '../../utils/CodeGenerator';
+import { generateDSPNodeCode, generateUIComponentCode } from '../../utils/IndividualCodeGenerator';
 import './CodeEditor.css';
 
-type CodeType = 'dsp' | 'ui' | 'helpers' | 'preview';
+type CodeTab = 'dsp' | 'ui' | 'helpers' | 'preview';
 
 export function CodeEditor() {
-  const { project, updateCode, selectUIComponent, selectDSPNode } = useProjectStore();
-  const [selectedFile, setSelectedFile] = useState<CodeType>('dsp');
-  const [showComponentPanel, setShowComponentPanel] = useState(true);
-  const [codeHints, setCodeHints] = useState<string>('');
+  const {
+    project,
+    updateCode,
+    updateDSPNodeCode,
+    updateUIComponentCode,
+    selectedDSPNode: storeSelectedDSPNode,
+    selectedUIComponent: storeSelectedUIComponent
+  } = useProjectStore();
 
-  const files = [
-    { id: 'dsp' as CodeType, label: 'DSP Processing', language: 'cpp' },
-    { id: 'ui' as CodeType, label: 'UI Customization', language: 'javascript' },
-    { id: 'helpers' as CodeType, label: 'Helper Functions', language: 'javascript' },
-    { id: 'preview' as CodeType, label: 'Plugin Preview', language: 'cpp' },
+  const [selectedTab, setSelectedTab] = useState<CodeTab>('dsp');
+  const [selectedDSPNodeId, setSelectedDSPNodeId] = useState<string | null>(null);
+  const [selectedUIComponentId, setSelectedUIComponentId] = useState<string | null>(null);
+  const [showItemList, setShowItemList] = useState(true);
+
+  const tabs = [
+    { id: 'dsp' as CodeTab, label: 'DSP Processing', language: 'cpp' },
+    { id: 'ui' as CodeTab, label: 'UI Customization', language: 'javascript' },
+    { id: 'helpers' as CodeTab, label: 'Helper Functions', language: 'javascript' },
+    { id: 'preview' as CodeTab, label: 'Plugin Preview', language: 'cpp' },
   ];
 
-  // Generate code hints based on selected file and components
+  // Auto-select first item when tab changes
   useEffect(() => {
-    if (selectedFile === 'dsp') {
-      setCodeHints(generateDSPCodeHints(project.dspGraph.nodes));
-    } else if (selectedFile === 'ui') {
-      setCodeHints(generateUICodeHints(project.uiComponents));
-    } else if (selectedFile === 'preview') {
-      setCodeHints(generatePreviewCodeHints(project));
-    } else {
-      setCodeHints('// Create reusable helper functions here');
+    if (selectedTab === 'dsp' && project.dspGraph.nodes.length > 0 && !selectedDSPNodeId) {
+      setSelectedDSPNodeId(project.dspGraph.nodes[0].id);
+    } else if (selectedTab === 'ui' && project.uiComponents.length > 0 && !selectedUIComponentId) {
+      setSelectedUIComponentId(project.uiComponents[0].id);
     }
-  }, [selectedFile, project.dspGraph.nodes, project.uiComponents, project]);
+  }, [selectedTab, project.dspGraph.nodes, project.uiComponents]);
+
+  // Sync with store selections
+  useEffect(() => {
+    if (storeSelectedDSPNode && selectedTab === 'dsp') {
+      setSelectedDSPNodeId(storeSelectedDSPNode);
+    }
+  }, [storeSelectedDSPNode, selectedTab]);
+
+  useEffect(() => {
+    if (storeSelectedUIComponent && selectedTab === 'ui') {
+      setSelectedUIComponentId(storeSelectedUIComponent);
+    }
+  }, [storeSelectedUIComponent, selectedTab]);
 
   const handleEditorChange = (value: string | undefined) => {
-    if (value !== undefined && selectedFile !== 'preview') {
-      updateCode(selectedFile, value);
+    if (value === undefined) return;
+
+    // Prevent updates during programmatic changes
+    // Only update if the value actually differs from current state
+    if (selectedTab === 'helpers') {
+      if (value !== project.code.helpers) {
+        updateCode('helpers', value);
+      }
+    } else if (selectedTab === 'dsp' && selectedDSPNodeId) {
+      const node = project.dspGraph.nodes.find(n => n.id === selectedDSPNodeId);
+      const currentCode = node?.code || generateDSPNodeCode(node!);
+      if (value !== currentCode) {
+        updateDSPNodeCode(selectedDSPNodeId, value);
+      }
+    } else if (selectedTab === 'ui' && selectedUIComponentId) {
+      const component = project.uiComponents.find(c => c.id === selectedUIComponentId);
+      const currentCode = component?.code || generateUIComponentCode(component!);
+      if (value !== currentCode) {
+        updateUIComponentCode(selectedUIComponentId, value);
+      }
     }
+    // Preview is read-only, no updates
   };
 
-  // Get the editor value - use generated code for preview mode
   const getEditorValue = (): string => {
-    if (selectedFile === 'preview') {
-      return generatePluginPreviewCode(project);
+    switch (selectedTab) {
+      case 'dsp': {
+        if (!selectedDSPNodeId) return '// Select a DSP node to view its code';
+        const node = project.dspGraph.nodes.find(n => n.id === selectedDSPNodeId);
+        if (!node) return '// Node not found';
+        // Return custom code if available, otherwise generate default
+        return node.code || generateDSPNodeCode(node);
+      }
+
+      case 'ui': {
+        if (!selectedUIComponentId) return '// Select a UI component to view its code';
+        const component = project.uiComponents.find(c => c.id === selectedUIComponentId);
+        if (!component) return '// Component not found';
+        // Return custom code if available, otherwise generate default
+        return component.code || generateUIComponentCode(component);
+      }
+
+      case 'helpers':
+        return project.code.helpers || '// Create reusable helper functions here\n';
+
+      case 'preview':
+        return generatePluginPreviewCode(project);
+
+      default:
+        return '';
     }
-    return project.code[selectedFile] || '';
   };
 
-  const handleComponentClick = (component: UIComponent | DSPNode, type: 'ui' | 'dsp') => {
-    if (type === 'ui') {
-      selectUIComponent(component.id);
-      if (selectedFile !== 'preview') {
-        setSelectedFile('ui');
-      }
-      // Update hints to show component-specific code
-      setCodeHints(generateUIComponentCodeHints(component as UIComponent, project));
+  const getEditorLanguage = (): string => {
+    const tab = tabs.find(t => t.id === selectedTab);
+    return tab?.language || 'cpp';
+  };
+
+  const isEditorReadOnly = (): boolean => {
+    if (selectedTab === 'preview') return true;
+    if (selectedTab === 'dsp' && !selectedDSPNodeId) return true;
+    if (selectedTab === 'ui' && !selectedUIComponentId) return true;
+    return false;
+  };
+
+  // Generate unique key for editor to force remount when switching items
+  const getEditorKey = (): string => {
+    if (selectedTab === 'dsp') {
+      return `dsp-${selectedDSPNodeId || 'none'}`;
+    } else if (selectedTab === 'ui') {
+      return `ui-${selectedUIComponentId || 'none'}`;
     } else {
-      selectDSPNode(component.id);
-      if (selectedFile !== 'preview') {
-        setSelectedFile('dsp');
-      }
-      // Update hints to show node-specific code
-      setCodeHints(generateDSPNodeCodeHints(component as DSPNode));
+      return selectedTab;
     }
   };
 
-  const insertCodeSnippet = (snippet: string) => {
-    if (selectedFile === 'preview') return; // Can't insert snippets in preview mode
-    const currentCode = project.code[selectedFile];
-    const newCode = currentCode + '\n\n' + snippet;
-    updateCode(selectedFile, newCode);
+  const handleDSPNodeClick = (nodeId: string) => {
+    setSelectedDSPNodeId(nodeId);
+  };
+
+  const handleUIComponentClick = (componentId: string) => {
+    setSelectedUIComponentId(componentId);
+  };
+
+  const renderItemList = () => {
+    if (!showItemList) return null;
+
+    if (selectedTab === 'dsp') {
+      return (
+        <div className="item-list">
+          <div className="item-list-header">
+            <h4>DSP Nodes ({project.dspGraph.nodes.length})</h4>
+          </div>
+          <div className="item-list-content">
+            {project.dspGraph.nodes.map((node) => {
+              // Only show checkmark if custom code exists and differs from generated default
+              const hasCustomCode = node.code && node.code.trim().length > 0 &&
+                                   node.code !== generateDSPNodeCode(node);
+              return (
+                <div
+                  key={node.id}
+                  className={`item-list-item ${selectedDSPNodeId === node.id ? 'active' : ''}`}
+                  onClick={() => handleDSPNodeClick(node.id)}
+                  title={`Click to edit ${node.label || node.type} code`}
+                >
+                  <span className="dsp-color" style={{ backgroundColor: getDSPNodeColor(node.type) }} />
+                  <div className="item-info">
+                    <span className="item-name">{node.label || node.type}</span>
+                    <span className="item-type">{node.type}</span>
+                  </div>
+                  {hasCustomCode && <span className="item-badge">✓</span>}
+                </div>
+              );
+            })}
+            {project.dspGraph.nodes.length === 0 && (
+              <div className="empty-message">
+                No DSP nodes yet.<br />
+                Add nodes in the DSP Designer.
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedTab === 'ui') {
+      return (
+        <div className="item-list">
+          <div className="item-list-header">
+            <h4>UI Components ({project.uiComponents.length})</h4>
+          </div>
+          <div className="item-list-content">
+            {project.uiComponents.map((comp) => {
+              // Only show checkmark if custom code exists and differs from generated default
+              const hasCustomCode = comp.code && comp.code.trim().length > 0 &&
+                                   comp.code !== generateUIComponentCode(comp);
+              return (
+                <div
+                  key={comp.id}
+                  className={`item-list-item ${selectedUIComponentId === comp.id ? 'active' : ''}`}
+                  onClick={() => handleUIComponentClick(comp.id)}
+                  title={`Click to edit ${comp.label} code`}
+                >
+                  <span className="component-icon">{getUIComponentIcon(comp.type)}</span>
+                  <div className="item-info">
+                    <span className="item-name">{comp.label}</span>
+                    <span className="item-type">{comp.type}</span>
+                  </div>
+                  {hasCustomCode && <span className="item-badge">✓</span>}
+                </div>
+              );
+            })}
+            {project.uiComponents.length === 0 && (
+              <div className="empty-message">
+                No UI components yet.<br />
+                Add components in the UI Designer.
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // For helpers and preview, don't show item list
+    return null;
+  };
+
+  const getCodeHints = (): string => {
+    if (selectedTab === 'dsp' && selectedDSPNodeId) {
+      const node = project.dspGraph.nodes.find(n => n.id === selectedDSPNodeId);
+      if (!node) return '';
+      return generateDSPNodeHints(node);
+    }
+
+    if (selectedTab === 'ui' && selectedUIComponentId) {
+      const component = project.uiComponents.find(c => c.id === selectedUIComponentId);
+      if (!component) return '';
+      return generateUIComponentHints(component, project);
+    }
+
+    if (selectedTab === 'helpers') {
+      return `// Helper Functions
+// Create reusable utility functions that can be used across your DSP nodes and UI components.
+// These functions will be available in the Plugin Preview.`;
+    }
+
+    if (selectedTab === 'preview') {
+      const nodeCount = project.dspGraph.nodes.length;
+      const componentCount = project.uiComponents.length;
+      const customNodeCodes = project.dspGraph.nodes.filter(n =>
+        n.code && n.code.trim().length > 0 && n.code !== generateDSPNodeCode(n)
+      ).length;
+      const customComponentCodes = project.uiComponents.filter(c =>
+        c.code && c.code.trim().length > 0 && c.code !== generateUIComponentCode(c)
+      ).length;
+
+      return `// Plugin Preview (Read-Only)
+//
+// This preview combines all your individual node and component code
+// into a complete plugin implementation.
+//
+// Statistics:
+//   - ${nodeCount} DSP node${nodeCount !== 1 ? 's' : ''} (${customNodeCodes} customized)
+//   - ${componentCount} UI component${componentCount !== 1 ? 's' : ''} (${customComponentCodes} customized)
+//
+// To edit code, switch to the DSP Processing or UI Customization tabs.`;
+    }
+
+    return '';
   };
 
   return (
     <div className="code-editor">
       <div className="code-tabs">
-        {files.map((file) => (
+        {tabs.map((tab) => (
           <button
-            key={file.id}
-            className={`code-tab ${selectedFile === file.id ? 'active' : ''}`}
-            onClick={() => setSelectedFile(file.id)}
+            key={tab.id}
+            className={`code-tab ${selectedTab === tab.id ? 'active' : ''}`}
+            onClick={() => setSelectedTab(tab.id)}
           >
-            {file.label}
+            {tab.label}
           </button>
         ))}
-        <button
-          className="code-tab toggle-panel"
-          onClick={() => setShowComponentPanel(!showComponentPanel)}
-          title={showComponentPanel ? 'Hide component panel' : 'Show component panel'}
-        >
-          {showComponentPanel ? '◀' : '▶'} Components
-        </button>
+        {(selectedTab === 'dsp' || selectedTab === 'ui') && (
+          <button
+            className="code-tab toggle-panel"
+            onClick={() => setShowItemList(!showItemList)}
+            title={showItemList ? 'Hide item list' : 'Show item list'}
+          >
+            {showItemList ? '◀' : '▶'}
+          </button>
+        )}
       </div>
 
       <div className="code-editor-content">
-        {showComponentPanel && (
-          <div className="component-panel">
-            <div className="component-section">
-              <h4>UI Components ({project.uiComponents.length})</h4>
-              <div className="component-list">
-                {project.uiComponents.map((comp) => (
-                  <div
-                    key={comp.id}
-                    className="component-item"
-                    onClick={() => handleComponentClick(comp, 'ui')}
-                    title={`Click to view ${comp.label} code`}
-                  >
-                    <span className="component-icon">{getUIComponentIcon(comp.type)}</span>
-                    <span className="component-name">{comp.label}</span>
-                    <span className="component-type">{comp.type}</span>
-                  </div>
-                ))}
-                {project.uiComponents.length === 0 && (
-                  <div className="empty-message">No UI components yet</div>
-                )}
-              </div>
-            </div>
-
-            <div className="component-section">
-              <h4>DSP Nodes ({project.dspGraph.nodes.length})</h4>
-              <div className="component-list">
-                {project.dspGraph.nodes.map((node) => (
-                  <div
-                    key={node.id}
-                    className="component-item"
-                    onClick={() => handleComponentClick(node, 'dsp')}
-                    title={`Click to view ${node.label || node.type} code`}
-                  >
-                    <span className="dsp-color" style={{ backgroundColor: getDSPNodeColor(node.type) }} />
-                    <span className="component-name">{node.label || node.type}</span>
-                    <span className="component-type">{node.type}</span>
-                  </div>
-                ))}
-                {project.dspGraph.nodes.length === 0 && (
-                  <div className="empty-message">No DSP nodes yet</div>
-                )}
-              </div>
-            </div>
-
-            <div className="component-section">
-              <h4>Code Snippets</h4>
-              <button
-                className="snippet-button"
-                onClick={() => insertCodeSnippet(getParameterAccessSnippet(selectedFile))}
-              >
-                + Parameter Access
-              </button>
-              <button
-                className="snippet-button"
-                onClick={() => insertCodeSnippet(getComponentIterationSnippet(selectedFile))}
-              >
-                + Iterate Components
-              </button>
-              <button
-                className="snippet-button"
-                onClick={() => insertCodeSnippet(getAudioProcessingSnippet())}
-              >
-                + Audio Processing
-              </button>
-            </div>
-          </div>
-        )}
+        {renderItemList()}
 
         <div className="editor-main">
           <div className="editor-container">
             <Editor
+              key={getEditorKey()}
               height="100%"
-              language={files.find((f) => f.id === selectedFile)?.language || 'cpp'}
+              language={getEditorLanguage()}
               value={getEditorValue()}
               onChange={handleEditorChange}
               theme="vs-dark"
@@ -184,15 +313,15 @@ export function CodeEditor() {
                 scrollBeyondLastLine: false,
                 renderWhitespace: 'selection',
                 bracketPairColorization: { enabled: true },
-                readOnly: selectedFile === 'preview',
+                readOnly: isEditorReadOnly(),
               }}
             />
           </div>
 
-          {codeHints && (
+          {getCodeHints() && (
             <div className="code-hints">
               <h4>💡 Code Hints</h4>
-              <pre>{codeHints}</pre>
+              <pre>{getCodeHints()}</pre>
             </div>
           )}
         </div>
@@ -201,59 +330,7 @@ export function CodeEditor() {
   );
 }
 
-// Helper functions for code generation
-function generateDSPCodeHints(nodes: DSPNode[]): string {
-  if (nodes.length === 0) {
-    return '// No DSP nodes in the graph yet.\n// Add nodes in the DSP Designer to generate code hints.';
-  }
-
-  let hints = '// Available DSP nodes:\n';
-  nodes.forEach((node) => {
-    hints += `//   - ${node.label || node.type} (${node.type})\n`;
-    if (node.parameters && Object.keys(node.parameters).length > 0) {
-      hints += `//     Parameters: ${Object.keys(node.parameters).join(', ')}\n`;
-    }
-  });
-  hints += '\n// Example DSP processing:\n';
-  hints += 'void processBlock(float** outputs, int numSamples) {\n';
-  hints += '  for (int i = 0; i < numSamples; ++i) {\n';
-  hints += '    // Process audio sample by sample\n';
-  hints += '    float sample = outputs[0][i];\n';
-  nodes.forEach((node) => {
-    hints += `    // ${node.type} processing\n`;
-  });
-  hints += '    outputs[0][i] = sample;\n';
-  hints += '    outputs[1][i] = sample;\n';
-  hints += '  }\n';
-  hints += '}';
-  return hints;
-}
-
-function generateUICodeHints(components: UIComponent[]): string {
-  if (components.length === 0) {
-    return '// No UI components yet.\n// Add components in the UI Designer to generate code hints.';
-  }
-
-  let hints = '// Available UI components:\n';
-  components.forEach((comp) => {
-    hints += `//   - ${comp.label} (${comp.type}) at (${comp.x}, ${comp.y})\n`;
-    if (comp.properties?.parameter) {
-      hints += `//     Controls parameter: ${comp.properties.parameter}\n`;
-    }
-  });
-  hints += '\n// Example UI interaction:\n';
-  hints += 'function onComponentChange(componentId, value) {\n';
-  hints += '  // Handle component value changes\n';
-  components.forEach((comp) => {
-    if (comp.properties?.parameter) {
-      hints += `  if (componentId === '${comp.id}') {\n`;
-      hints += `    setParameter('${comp.properties.parameter}', value);\n`;
-      hints += `  }\n`;
-    }
-  });
-  hints += '}';
-  return hints;
-}
+// Helper functions
 
 function getUIComponentIcon(type: string): string {
   const icons: Record<string, string> = {
@@ -289,119 +366,8 @@ function getDSPNodeColor(type: string): string {
   return colors[type] || '#64748b';
 }
 
-function getParameterAccessSnippet(fileType: CodeType): string {
-  if (fileType === 'dsp') {
-    return `// Access parameter value
-float paramValue = getParameter("parameter_name");
-
-// Set parameter value
-setParameter("parameter_name", 0.5f);`;
-  }
-  return `// Access parameter value
-const value = getParameter('parameter_name');
-
-// Update UI when parameter changes
-onParameterChange('parameter_name', (value) => {
-  updateComponentValue('component_id', value);
-});`;
-}
-
-function getComponentIterationSnippet(fileType: CodeType): string {
-  if (fileType === 'dsp') {
-    return `// Iterate through all parameters
-for (const auto& param : parameters) {
-  float value = param.getValue();
-  // Process parameter
-}`;
-  }
-  return `// Iterate through all UI components
-components.forEach((component) => {
-  if (component.type === 'knob') {
-    // Handle knob component
-  }
-});`;
-}
-
-function getAudioProcessingSnippet(): string {
-  return `// Process audio buffer
-void processAudio(float* leftChannel, float* rightChannel, int numSamples) {
-  for (int i = 0; i < numSamples; ++i) {
-    // Get input samples
-    float left = leftChannel[i];
-    float right = rightChannel[i];
-
-    // Process audio
-    // ... your DSP code here ...
-
-    // Write output samples
-    leftChannel[i] = left;
-    rightChannel[i] = right;
-  }
-}`;
-}
-
-function generatePreviewCodeHints(project: any): string {
-  const nodeCount = project.dspGraph.nodes.length;
-  const componentCount = project.uiComponents.length;
-  const mappedComponents = project.uiComponents.filter((c: any) => c.parameterId).length;
-
-  let hints = '// Auto-Generated Plugin Preview\n';
-  hints += `// Project: ${project.name}\n`;
-  hints += `// Version: ${project.version}\n`;
-  hints += '//\n';
-  hints += '// This is a read-only preview of your complete plugin code.\n';
-  hints += '// The code is automatically generated from your DSP graph and UI components.\n';
-  hints += '//\n';
-  hints += `// Statistics:\n`;
-  hints += `//   - ${nodeCount} DSP node${nodeCount !== 1 ? 's' : ''}\n`;
-  hints += `//   - ${componentCount} UI component${componentCount !== 1 ? 's' : ''}\n`;
-  hints += `//   - ${mappedComponents} parameter mapping${mappedComponents !== 1 ? 's' : ''}\n`;
-  hints += '//\n';
-  hints += '// To edit DSP or UI code, switch to the respective tabs.\n';
-  hints += '// Changes in the DSP/UI tabs will be reflected here.';
-
-  return hints;
-}
-
-function generateUIComponentCodeHints(component: UIComponent, project: any): string {
-  let hints = `// Code for UI Component: ${component.label}\n`;
-  hints += `// Type: ${component.type}\n`;
-  hints += `// Position: (${component.x}, ${component.y})\n`;
-  hints += `// Size: ${component.width} x ${component.height}\n`;
-
-  if (component.parameterId) {
-    // Find the mapped parameter
-    const mappedParam = project.dspGraph.nodes
-      .flatMap((node: DSPNode) => node.parameters || [])
-      .find((p: any) => p.id === component.parameterId);
-
-    if (mappedParam) {
-      hints += `// Controls parameter: ${mappedParam.name}\n`;
-      hints += `//\n`;
-      hints += `// Generated interaction code:\n`;
-      hints += `on${capitalize(component.id)}Change((value) => {\n`;
-      hints += `  processor.setParameter("${mappedParam.name}", value);\n`;
-      hints += `  updateDisplay("${component.id}", value);\n`;
-      hints += `});\n\n`;
-      hints += `// Parameter range:\n`;
-      hints += `// Min: ${component.properties?.min ?? mappedParam.min ?? 0}\n`;
-      hints += `// Max: ${component.properties?.max ?? mappedParam.max ?? 1}\n`;
-      hints += `// Default: ${component.properties?.value ?? mappedParam.default ?? 0.5}`;
-    } else {
-      hints += `// Parameter mapping exists but parameter not found\n`;
-    }
-  } else {
-    hints += `//\n`;
-    hints += `// No parameter mapping\n`;
-    hints += `// To connect to a DSP parameter, use the Properties Panel in UI Designer`;
-  }
-
-  return hints;
-}
-
-function generateDSPNodeCodeHints(node: DSPNode): string {
-  let hints = `// Code for DSP Node: ${node.label || node.type}\n`;
-  hints += `// Type: ${node.type}\n`;
+function generateDSPNodeHints(node: DSPNode): string {
+  let hints = `// ${node.label || node.type} - ${capitalize(node.type)} Node\n`;
   hints += `//\n`;
 
   if (node.parameters && node.parameters.length > 0) {
@@ -419,32 +385,38 @@ function generateDSPNodeCodeHints(node: DSPNode): string {
     hints += `//\n`;
   }
 
-  hints += `// Generated processing code:\n`;
-  hints += `float process${capitalize(node.type)}(float input, int nodeId) {\n`;
+  hints += `// This code defines the processing behavior for this DSP node.\n`;
+  hints += `// The code will be integrated into the final plugin preview.\n`;
+  hints += `//\n`;
+  hints += `// Tip: You can use the parameters above in your processing code.`;
 
-  if (node.type === 'oscillator') {
-    hints += `  // Generate oscillator waveform\n`;
-    hints += `  float phase = getPhase(nodeId);\n`;
-    const waveParam = node.parameters?.find((p) => p.name === 'waveform');
-    hints += `  return generateWaveform(phase, ${waveParam?.value || 'sine'});\n`;
-  } else if (node.type === 'filter') {
-    hints += `  // Apply filter\n`;
-    const freqParam = node.parameters?.find((p) => p.name === 'frequency');
-    const qParam = node.parameters?.find((p) => p.name === 'Q' || p.name === 'resonance');
-    hints += `  float freq = ${freqParam?.value || 1000.0};\n`;
-    hints += `  float q = ${qParam?.value || 1.0};\n`;
-    hints += `  return applyFilter(input, freq, q);\n`;
-  } else if (node.type === 'gain') {
-    hints += `  // Apply gain\n`;
-    const gainParam = node.parameters?.find((p) => p.name === 'gain');
-    hints += `  float gainValue = ${gainParam?.value || 1.0};\n`;
-    hints += `  return input * gainValue;\n`;
+  return hints;
+}
+
+function generateUIComponentHints(component: UIComponent, project: any): string {
+  let hints = `// ${component.label} - ${capitalize(component.type)} Component\n`;
+  hints += `// Type: ${component.type}\n`;
+  hints += `// Position: (${component.x}, ${component.y})\n`;
+  hints += `// Size: ${component.width} x ${component.height}\n`;
+  hints += `//\n`;
+
+  if (component.parameterId) {
+    const mappedParam = project.dspGraph.nodes
+      .flatMap((node: DSPNode) => node.parameters || [])
+      .find((p: any) => p.id === component.parameterId);
+
+    if (mappedParam) {
+      hints += `// Linked to parameter: ${mappedParam.name}\n`;
+      hints += `// Range: ${mappedParam.min || 0} - ${mappedParam.max || 1}\n`;
+    }
   } else {
-    hints += `  // Process ${node.type}\n`;
-    hints += `  return input; // TODO: Implement ${node.type} processing\n`;
+    hints += `// Not linked to any parameter\n`;
+    hints += `// To link, use the Properties Panel in UI Designer\n`;
   }
 
-  hints += `}`;
+  hints += `//\n`;
+  hints += `// This code defines the behavior and interaction for this UI component.\n`;
+  hints += `// It will be integrated into the final plugin preview.`;
 
   return hints;
 }

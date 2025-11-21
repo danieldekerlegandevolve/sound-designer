@@ -20,6 +20,14 @@ declare global {
 
       // System
       getAppPath: (name: string) => Promise<{ success: boolean; path?: string; error?: string }>;
+
+      // Plugin database
+      savePluginToDB: (pluginProject: any) => Promise<{ success: boolean; error?: string }>;
+      getPluginFromDB: (id: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+      listPlugins: (options?: any) => Promise<{ success: boolean; data?: any; error?: string }>;
+      deletePluginFromDB: (id: string) => Promise<{ success: boolean; deleted?: boolean; error?: string }>;
+      searchPlugins: (query: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+      getAllTags: () => Promise<{ success: boolean; data?: any; error?: string }>;
     };
   }
 }

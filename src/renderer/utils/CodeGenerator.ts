@@ -1,4 +1,6 @@
 import { PluginProject, UIComponent, DSPNode, DSPParameter } from '@shared/types';
+import { generateDSPNodeCode, generateUIComponentCode } from './IndividualCodeGenerator';
+import { getProcessingOrder } from './TemplateHelpers';
 
 /**
  * Auto-generate DSP processing code based on the DSP graph
@@ -119,39 +121,109 @@ const uiController = new UIController();`;
  * Generate complete plugin preview code
  */
 export function generatePluginPreviewCode(project: PluginProject): string {
-  const dspCode = generateDSPCode(project);
-  const uiCode = generateUICode(project);
+  // Get nodes in processing order based on connections
+  const orderedNodes = getProcessingOrder(project.dspGraph.nodes, project.dspGraph.connections);
+
+  // Aggregate all DSP node codes in processing order
+  const dspNodeCodes = orderedNodes
+    .map((node) => {
+      // Use custom code if available, otherwise generate default
+      return node.code || generateDSPNodeCode(node);
+    })
+    .join('\n\n');
+
+  // Aggregate all UI component codes
+  const uiComponentCodes = project.uiComponents
+    .map((component) => {
+      // Use custom code if available, otherwise generate default
+      return component.code || generateUIComponentCode(component);
+    })
+    .join('\n\n');
+
+  // Include helper functions
+  const helperCode = project.code.helpers || '// No helper functions defined';
+
+  // Create node index map for processing chain
+  const nodeIndexMap = new Map(orderedNodes.map((node, idx) => [node.id, idx]));
 
   return `/**
  * ${project.name} - Audio Plugin
  * Version: ${project.version}
  * ${project.description}
  *
- * This is a preview of the generated plugin code.
- * Edit in the Code Editor to customize.
+ * This is a preview of the complete generated plugin code.
+ * Individual node and component code can be edited in their respective tabs.
  */
 
 // ============================================
-// DSP PROCESSING
+// DSP NODE IMPLEMENTATIONS
 // ============================================
 
-${dspCode}
+${dspNodeCodes || '// No DSP nodes defined yet'}
 
 // ============================================
-// UI INTERACTION
+// UI COMPONENT IMPLEMENTATIONS
 // ============================================
 
-${uiCode}
+${uiComponentCodes || '// No UI components defined yet'}
 
 // ============================================
-// PLUGIN INITIALIZATION
+// HELPER FUNCTIONS
+// ============================================
+
+${helperCode}
+
+// ============================================
+// MAIN AUDIO PROCESSOR
+// ============================================
+
+class ${project.name.replace(/\s+/g, '')}AudioProcessor {
+  constructor(sampleRate) {
+    this.sampleRate = sampleRate;
+    // Initialize all DSP nodes in processing order
+${orderedNodes.map((node, i) => `    this.node${i} = new ${sanitizeName(node.label || node.type)}${capitalize(node.type)}();`).join('\n') || '    // No nodes to initialize'}
+  }
+
+  processBlock(outputs, numSamples, numChannels) {
+    for (let i = 0; i < numSamples; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        let sample = outputs[ch][i];
+
+        // Process through DSP chain based on connection order
+${orderedNodes.length > 0
+  ? orderedNodes.map((node, idx) => `        sample = this.node${idx}.process(sample, this.sampleRate);`).join('\n')
+  : '        // No processing'}
+
+        outputs[ch][i] = sample;
+      }
+    }
+  }
+}
+
+// ============================================
+// UI CONTROLLER
+// ============================================
+
+class ${project.name.replace(/\s+/g, '')}UIController {
+  constructor(processor) {
+    this.processor = processor;
+    this.initializeComponents();
+  }
+
+  initializeComponents() {
+${project.uiComponents.map((comp, i) => `    this.component${i} = ${sanitizeName(comp.label)}${capitalize(comp.type)}();`).join('\n') || '    // No UI components'}
+  }
+}
+
+// ============================================
+// PLUGIN MAIN CLASS
 // ============================================
 
 class ${project.name.replace(/\s+/g, '')}Plugin {
   constructor(audioContext) {
     this.context = audioContext;
-    this.processor = new AudioProcessor();
-    this.uiController = new UIController();
+    this.processor = new ${project.name.replace(/\s+/g, '')}AudioProcessor(audioContext.sampleRate);
+    this.uiController = new ${project.name.replace(/\s+/g, '')}UIController(this.processor);
   }
 
   process(inputs, outputs, parameters) {
@@ -161,6 +233,10 @@ class ${project.name.replace(/\s+/g, '')}Plugin {
 }
 
 export default ${project.name.replace(/\s+/g, '')}Plugin;`;
+}
+
+function sanitizeName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9]/g, '').replace(/^./, (str) => str.toUpperCase());
 }
 
 // Helper functions

@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import type { PluginProject } from '@shared/types';
 import { getDefaultParametersForNodeType } from './DSPNodeDefaults';
+import { enhanceTemplateProject } from './TemplateHelpers';
 
 export interface PluginTemplate {
   id: string;
@@ -1365,13 +1366,15 @@ export function searchTemplates(query: string): PluginTemplate[] {
 export function createProjectFromTemplate(template: PluginTemplate): PluginProject {
   const clonedGraph = JSON.parse(JSON.stringify(template.project.dspGraph));
 
-  // Ensure all DSP nodes have proper parameter arrays
+  // Ensure all DSP nodes have proper parameter arrays and inputs/outputs
   clonedGraph.nodes = clonedGraph.nodes.map((node: any) => {
     // If parameters is an object (old format), convert to array using defaults
     if (node.parameters && !Array.isArray(node.parameters)) {
       return {
         ...node,
         parameters: getDefaultParametersForNodeType(node.type),
+        inputs: node.inputs || ['input'],
+        outputs: node.outputs || ['output'],
       };
     }
     // If parameters is missing or empty, add defaults
@@ -1379,13 +1382,20 @@ export function createProjectFromTemplate(template: PluginTemplate): PluginProje
       return {
         ...node,
         parameters: getDefaultParametersForNodeType(node.type),
+        inputs: node.inputs || ['input'],
+        outputs: node.outputs || ['output'],
       };
     }
-    // Parameters is already an array, keep it
-    return node;
+    // Parameters is already an array, ensure inputs/outputs exist
+    return {
+      ...node,
+      inputs: node.inputs || ['input'],
+      outputs: node.outputs || ['output'],
+    };
   });
 
-  return {
+  // Create base project
+  const baseProject = {
     ...template.project,
     id: nanoid(),
     // Deep clone to avoid reference issues
@@ -1393,5 +1403,14 @@ export function createProjectFromTemplate(template: PluginTemplate): PluginProje
     dspGraph: clonedGraph,
     code: { ...template.project.code },
     settings: { ...template.project.settings },
+  };
+
+  // Enhance with auto-connections and parameter mappings
+  const enhanced = enhanceTemplateProject(baseProject);
+
+  return {
+    ...baseProject,
+    dspGraph: enhanced.dspGraph,
+    uiComponents: enhanced.uiComponents,
   };
 }

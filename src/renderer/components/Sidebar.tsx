@@ -18,6 +18,8 @@ export function Sidebar() {
   ];
 
   const dspNodeTypes = [
+    { type: 'input', label: 'Audio Input', color: '#22c55e' },
+    { type: 'output', label: 'Audio Output', color: '#dc2626' },
     { type: 'oscillator', label: 'Oscillator', color: '#4ade80' },
     { type: 'filter', label: 'Filter', color: '#4a9eff' },
     { type: 'envelope', label: 'Envelope', color: '#fb923c' },
@@ -127,6 +129,15 @@ export function Sidebar() {
             <div className="component-category">Preview Controls</div>
             <div className="info-text">
               Test your plugin with real-time audio processing.
+            </div>
+          </div>
+        )}
+
+        {selectedMode === 'daw' && (
+          <div className="component-list">
+            <div className="component-category">DAW</div>
+            <div className="info-text">
+              Create musical arrangements with your plugins. Add tracks, create MIDI clips, and test plugins together.
             </div>
           </div>
         )}

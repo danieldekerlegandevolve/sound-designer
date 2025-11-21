@@ -55,6 +55,8 @@ interface ProjectState {
 
   // Code actions
   updateCode: (type: 'dsp' | 'ui' | 'helpers', code: string) => void;
+  updateDSPNodeCode: (id: string, code: string) => void;
+  updateUIComponentCode: (id: string, code: string) => void;
 
   // History actions
   undo: () => void;
@@ -279,7 +281,11 @@ export const useProjectStore = create<ProjectState>()(
           ? node.parameters
           : getDefaultParametersForNodeType(node.type);
 
-        const newNode = { ...node, id: nanoid(), parameters };
+        // Ensure inputs and outputs are always defined
+        const inputs = node.inputs || ['input'];
+        const outputs = node.outputs || ['output'];
+
+        const newNode = { ...node, id: nanoid(), parameters, inputs, outputs };
         state.project.dspGraph.nodes.push(newNode);
         state.isDirty = true;
         state.canUndo = historyManager.canUndo();
@@ -386,6 +392,22 @@ export const useProjectStore = create<ProjectState>()(
       state.isDirty = true;
     }),
 
+    updateDSPNodeCode: (id, code) => set((state) => {
+      const index = state.project.dspGraph.nodes.findIndex((n) => n.id === id);
+      if (index !== -1) {
+        state.project.dspGraph.nodes[index].code = code;
+        state.isDirty = true;
+      }
+    }),
+
+    updateUIComponentCode: (id, code) => set((state) => {
+      const index = state.project.uiComponents.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        state.project.uiComponents[index].code = code;
+        state.isDirty = true;
+      }
+    }),
+
     // History actions
     undo: () => {
       const previousState = historyManager.undo();
@@ -430,6 +452,13 @@ export const useProjectStore = create<ProjectState>()(
         );
         if (result.success) {
           set({ isDirty: false, currentFilePath: result.path || null });
+
+          // Also save to plugin database
+          try {
+            await window.electronAPI.savePluginToDB(project);
+          } catch (error) {
+            console.error('Failed to save to plugin database:', error);
+          }
         }
       }
     },
@@ -440,6 +469,13 @@ export const useProjectStore = create<ProjectState>()(
         const result = await window.electronAPI.saveProject(project);
         if (result.success) {
           set({ isDirty: false, currentFilePath: result.path || null });
+
+          // Also save to plugin database
+          try {
+            await window.electronAPI.savePluginToDB(project);
+          } catch (error) {
+            console.error('Failed to save to plugin database:', error);
+          }
         }
       }
     },

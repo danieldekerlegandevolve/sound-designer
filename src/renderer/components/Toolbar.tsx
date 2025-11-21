@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { SettingsDialog } from './SettingsDialog';
 import { TemplateBrowser } from './TemplateBrowser';
+import { PluginLibrary } from './PluginLibrary';
 import {
   LayoutDashboard,
   GitBranch,
   Code2,
   Play,
+  Music,
   Save,
   FolderOpen,
   FileDown,
@@ -18,6 +20,7 @@ import {
   Undo2,
   Redo2,
   FileText,
+  Library,
 } from 'lucide-react';
 import './Toolbar.css';
 
@@ -43,12 +46,14 @@ export function Toolbar() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
+  const [showPluginLibrary, setShowPluginLibrary] = useState(false);
 
   const modes = [
     { id: 'ui' as const, label: 'UI Designer', icon: LayoutDashboard },
     { id: 'dsp' as const, label: 'DSP Graph', icon: GitBranch },
     { id: 'code' as const, label: 'Code', icon: Code2 },
     { id: 'preview' as const, label: 'Preview', icon: Play },
+    { id: 'daw' as const, label: 'DAW', icon: Music },
   ];
 
   return (
@@ -127,6 +132,10 @@ export function Toolbar() {
                 <button className="menu-item" onClick={() => { loadProject(); setShowFileMenu(false); }}>
                   <FolderOpen size={16} />
                   <span>Open Project...</span>
+                </button>
+                <button className="menu-item" onClick={() => { setShowPluginLibrary(true); setShowFileMenu(false); }}>
+                  <Library size={16} />
+                  <span>Plugin Library...</span>
                 </button>
                 <div className="menu-divider" />
                 <button className="menu-item" onClick={() => { saveProject(); setShowFileMenu(false); }}>
@@ -211,6 +220,7 @@ export function Toolbar() {
 
       <SettingsDialog isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <TemplateBrowser isOpen={showTemplateBrowser} onClose={() => setShowTemplateBrowser(false)} />
+      <PluginLibrary isOpen={showPluginLibrary} onClose={() => setShowPluginLibrary(false)} />
     </div>
   );
 }

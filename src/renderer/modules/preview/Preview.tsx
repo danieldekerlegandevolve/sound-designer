@@ -4,6 +4,7 @@ import { audioEngine } from '../../audio/AudioEngine';
 import { Play, Square, Volume2, Settings, RefreshCw } from 'lucide-react';
 import { Oscilloscope } from './Oscilloscope';
 import { SpectrumAnalyzer } from './SpectrumAnalyzer';
+import { MIDIKeyboard } from './MIDIKeyboard';
 import './Preview.css';
 
 export function Preview() {
@@ -70,6 +71,19 @@ export function Preview() {
     setIsPlaying(false);
     await loadProjectIntoEngine();
   };
+
+  const handleNoteOn = (note: number, velocity: number) => {
+    audioEngine.noteOn(note, velocity / 127); // Normalize velocity to 0-1
+  };
+
+  const handleNoteOff = (note: number) => {
+    audioEngine.noteOff(note);
+  };
+
+  // Check if project has any synth-like nodes (oscillator, envelope, etc.)
+  const hasSynthNodes = project.dspGraph.nodes.some(node =>
+    ['oscillator', 'envelope', 'lfo'].includes(node.type)
+  );
 
   return (
     <div className="preview">
@@ -157,6 +171,15 @@ export function Preview() {
             Settings
           </button>
         </div>
+
+        {hasSynthNodes && (
+          <MIDIKeyboard
+            octaves={2}
+            startOctave={3}
+            onNoteOn={handleNoteOn}
+            onNoteOff={handleNoteOff}
+          />
+        )}
 
         <div className="preview-visualizations">
           <Oscilloscope isPlaying={isPlaying} width={600} height={150} />

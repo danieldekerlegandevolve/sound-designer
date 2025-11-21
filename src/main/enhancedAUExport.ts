@@ -24,7 +24,7 @@ export interface AUConfiguration {
 
 export function generateAUConfiguration(project: PluginProject): AUConfiguration {
   const isSynth = project.dspGraph.nodes.some(n =>
-    n.type === 'oscillator' || n.type === 'sampler'
+    n.type === 'oscillator'
   );
 
   const hasMidi = project.dspGraph.nodes.some(n =>

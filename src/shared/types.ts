@@ -11,6 +11,7 @@ export interface PluginProject {
   code: CodeFiles;
   settings: PluginSettings;
   metadata?: ProjectMetadata;
+  tags?: string[];
 }
 
 export interface ProjectMetadata {
@@ -33,6 +34,7 @@ export interface UIComponent {
   properties: Record<string, any>;
   style: ComponentStyle;
   parameterId?: string; // Links to DSP parameter
+  code?: string; // Custom code for this component
 }
 
 export interface ComponentStyle {
@@ -61,6 +63,7 @@ export interface DSPNode {
   inputs: string[]; // Input port IDs
   outputs: string[]; // Output port IDs
   label?: string; // Optional display label
+  code?: string; // Custom code for this node
 }
 
 export interface DSPParameter {
@@ -105,4 +108,4 @@ export interface ExportConfig {
   optimizationLevel: 'debug' | 'release';
 }
 
-export type EditorMode = 'ui' | 'dsp' | 'code' | 'preview';
+export type EditorMode = 'ui' | 'dsp' | 'code' | 'preview' | 'daw';

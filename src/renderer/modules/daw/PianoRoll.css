@@ -1,0 +1,248 @@
+.piano-roll {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1a1a1a;
+  border-top: 2px solid #3e3e42;
+}
+
+.piano-roll-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #252526;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.piano-roll-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.piano-roll-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.snap-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.snap-select {
+  padding: 4px 8px;
+  background-color: #2a2a2a;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.piano-roll-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.piano-keys {
+  width: 60px;
+  background-color: #252526;
+  border-right: 1px solid #3e3e42;
+  overflow: hidden;
+  position: relative;
+}
+
+.piano-key {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+  user-select: none;
+}
+
+.piano-key.white {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.piano-key.black {
+  background-color: #2a2a2a;
+  color: #888;
+}
+
+.piano-key:hover {
+  background-color: #4a9eff;
+  color: white;
+}
+
+.note-grid-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.note-grid {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.grid-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.grid-row {
+  height: 16px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.grid-row.white {
+  background-color: #1e1e1e;
+}
+
+.grid-row.black {
+  background-color: #1a1a1a;
+}
+
+.grid-row.octave {
+  border-bottom: 1px solid #4a4a4a;
+}
+
+.grid-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #2a2a2a;
+}
+
+.grid-col.beat {
+  background-color: #3a3a3a;
+}
+
+.grid-col.measure {
+  background-color: #4a4a4a;
+  width: 2px;
+}
+
+.note {
+  position: absolute;
+  height: 14px;
+  top: 1px;
+  background: linear-gradient(180deg, #4a9eff 0%, #3a8ee6 100%);
+  border: 1px solid #5aaaff;
+  border-radius: 2px;
+  cursor: move;
+  transition: opacity 0.1s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.note:hover {
+  opacity: 0.9;
+  border-color: #7abaff;
+  box-shadow: 0 2px 6px rgba(74, 158, 255, 0.4);
+}
+
+.note.selected {
+  background: linear-gradient(180deg, #5aaaff 0%, #4a9eff 100%);
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.5);
+}
+
+.note-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: ew-resize;
+}
+
+.note-resize-handle.left {
+  left: 0;
+}
+
+.note-resize-handle.right {
+  right: 0;
+}
+
+.velocity-editor {
+  height: 80px;
+  background-color: #252526;
+  border-top: 1px solid #3e3e42;
+  padding: 8px;
+  overflow-x: auto;
+}
+
+.velocity-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.velocity-bars {
+  position: relative;
+  height: 50px;
+  background-color: #1e1e1e;
+  border-radius: 2px;
+}
+
+.velocity-bar {
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 2px 2px 0 0;
+  cursor: ns-resize;
+  transition: opacity 0.1s;
+}
+
+.velocity-bar:hover {
+  opacity: 0.8;
+}
+
+.playhead-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #4a9eff;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.selection-box {
+  position: absolute;
+  border: 2px dashed #4a9eff;
+  background-color: rgba(74, 158, 255, 0.1);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.piano-roll-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+}

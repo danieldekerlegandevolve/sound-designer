@@ -245,8 +245,8 @@ function validateParameters(
 
       // Check for missing units
       if ((param.type === 'float' || param.type === 'int') && !param.unit) {
-        info.push({
-          severity: 'info',
+        warnings.push({
+          severity: 'warning',
           category: 'parameters',
           message: `Parameter "${param.name}" has no unit specified`,
           nodeId: node.id,
