@@ -2,21 +2,33 @@ import React from 'react';
 import { Play, Pause, Square, SkipBack, Circle } from 'lucide-react';
 import { useDAWStore } from '../../store/dawStore';
 import { beatsToMBT } from '@shared/dawTypes';
+import { DAWAudioEngine } from '../../audio/DAWAudioEngine';
 
-export function Transport() {
-  const { project, play, pause, stop, updateTransport } = useDAWStore();
+interface TransportProps {
+  audioEngine: DAWAudioEngine | null;
+}
+
+export function Transport({ audioEngine }: TransportProps) {
+  const { project, play, pause, stop, setPlaybackPosition, updateTransport } = useDAWStore();
   const { transport } = project;
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (transport.isPlaying) {
       pause();
+      audioEngine?.pause();
     } else {
       play();
+      if (audioEngine) {
+        await audioEngine.play(project, transport.currentTime, (time) => {
+          setPlaybackPosition(time);
+        });
+      }
     }
   };
 
   const handleStop = () => {
     stop();
+    audioEngine?.stop();
   };
 
   const handleBPMChange = (e: React.ChangeEvent<HTMLInputElement>) => {
