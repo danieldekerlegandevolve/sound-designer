@@ -6,6 +6,7 @@ import { UIDesigner } from './modules/ui-designer/UIDesigner';
 import { DSPDesigner } from './modules/dsp-designer/DSPDesigner';
 import { CodeEditor } from './modules/code-editor/CodeEditor';
 import { Preview } from './modules/preview/Preview';
+import { DAW } from './modules/daw/DAW';
 import { KeyboardShortcuts } from './utils/keyboardShortcuts';
 import './App.css';
 
@@ -22,6 +23,8 @@ export function App() {
         return <CodeEditor />;
       case 'preview':
         return <Preview />;
+      case 'daw':
+        return <DAW />;
       default:
         return <UIDesigner />;
     }

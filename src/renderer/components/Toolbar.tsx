@@ -7,6 +7,7 @@ import {
   GitBranch,
   Code2,
   Play,
+  Music,
   Save,
   FolderOpen,
   FileDown,
@@ -49,6 +50,7 @@ export function Toolbar() {
     { id: 'dsp' as const, label: 'DSP Graph', icon: GitBranch },
     { id: 'code' as const, label: 'Code', icon: Code2 },
     { id: 'preview' as const, label: 'Preview', icon: Play },
+    { id: 'daw' as const, label: 'DAW', icon: Music },
   ];
 
   return (

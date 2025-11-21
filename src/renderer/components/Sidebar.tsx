@@ -130,6 +130,15 @@ export function Sidebar() {
             </div>
           </div>
         )}
+
+        {selectedMode === 'daw' && (
+          <div className="component-list">
+            <div className="component-category">DAW</div>
+            <div className="info-text">
+              Create musical arrangements with your plugins. Add tracks, create MIDI clips, and test plugins together.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

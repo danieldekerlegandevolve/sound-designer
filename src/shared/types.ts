@@ -107,4 +107,4 @@ export interface ExportConfig {
   optimizationLevel: 'debug' | 'release';
 }
 
-export type EditorMode = 'ui' | 'dsp' | 'code' | 'preview';
+export type EditorMode = 'ui' | 'dsp' | 'code' | 'preview' | 'daw';
