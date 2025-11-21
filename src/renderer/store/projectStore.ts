@@ -1,10 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { current } from 'immer';
 import { nanoid } from 'nanoid';
 import { HistoryManager } from '../utils/HistoryManager';
 import { getDefaultParametersForNodeType } from '../utils/DSPNodeDefaults';
-import { sanitizeProjectForIPC } from '../utils/projectSerializer';
 import type {
   PluginProject,
   UIComponent,
@@ -446,7 +444,8 @@ export const useProjectStore = create<ProjectState>()(
 
     // Project actions
     saveProject: async (filePath?) => {
-      const { project, currentFilePath, saveProjectAs } = get();
+      const state = get();
+      const { currentFilePath, saveProjectAs } = state;
 
       // If no file path exists, open Save As dialog
       if (!filePath && !currentFilePath) {
@@ -455,8 +454,10 @@ export const useProjectStore = create<ProjectState>()(
 
       if (window.electronAPI) {
         try {
-          // Use Immer's current() to extract plain value from proxy, then JSON round-trip for safety
-          const plainProject = JSON.parse(JSON.stringify(current(project)));
+          // Extract project and serialize to plain object via JSON
+          // This strips any Immer proxies or non-serializable objects
+          const projectJSON = JSON.stringify(state.project);
+          const plainProject = JSON.parse(projectJSON);
 
           const result = await window.electronAPI.saveProject(
             plainProject,
@@ -466,7 +467,7 @@ export const useProjectStore = create<ProjectState>()(
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
             import('./toastStore').then(({ toast }) => {
-              toast.success(`Saved "${project.name}"`, 2000);
+              toast.success(`Saved "${state.project.name}"`, 2000);
             });
           } else {
             console.error('Failed to save project:', result.error);
@@ -484,18 +485,20 @@ export const useProjectStore = create<ProjectState>()(
     },
 
     saveProjectAs: async () => {
-      const { project } = get();
+      const state = get();
       if (window.electronAPI) {
         try {
-          // Use Immer's current() to extract plain value from proxy, then JSON round-trip for safety
-          const plainProject = JSON.parse(JSON.stringify(current(project)));
+          // Extract project and serialize to plain object via JSON
+          // This strips any Immer proxies or non-serializable objects
+          const projectJSON = JSON.stringify(state.project);
+          const plainProject = JSON.parse(projectJSON);
 
           const result = await window.electronAPI.saveProject(plainProject);
 
           if (result.success) {
             set({ isDirty: false, currentFilePath: result.path || null });
             import('./toastStore').then(({ toast }) => {
-              toast.success(`Saved "${project.name}"`, 2000);
+              toast.success(`Saved "${state.project.name}"`, 2000);
             });
           } else {
             console.error('Failed to save project:', result.error);
