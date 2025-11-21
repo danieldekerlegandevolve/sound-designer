@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { current } from 'immer';
 import { nanoid } from 'nanoid';
 import { HistoryManager } from '../utils/HistoryManager';
 import { getDefaultParametersForNodeType } from '../utils/DSPNodeDefaults';
@@ -454,8 +455,8 @@ export const useProjectStore = create<ProjectState>()(
 
       if (window.electronAPI) {
         try {
-          // Convert to plain object by JSON round-trip to remove Immer proxies
-          const plainProject = JSON.parse(JSON.stringify(project));
+          // Use Immer's current() to extract plain value from proxy, then JSON round-trip for safety
+          const plainProject = JSON.parse(JSON.stringify(current(project)));
 
           const result = await window.electronAPI.saveProject(
             plainProject,
@@ -486,8 +487,8 @@ export const useProjectStore = create<ProjectState>()(
       const { project } = get();
       if (window.electronAPI) {
         try {
-          // Convert to plain object by JSON round-trip to remove Immer proxies
-          const plainProject = JSON.parse(JSON.stringify(project));
+          // Use Immer's current() to extract plain value from proxy, then JSON round-trip for safety
+          const plainProject = JSON.parse(JSON.stringify(current(project)));
 
           const result = await window.electronAPI.saveProject(plainProject);
 

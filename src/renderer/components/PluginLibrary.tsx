@@ -18,7 +18,7 @@ interface RecentProject {
 }
 
 export function PluginLibrary({ isOpen, onClose }: PluginLibraryProps) {
-  const { setProject, setCurrentFilePath, markClean } = useProjectStore();
+  const { loadProject } = useProjectStore();
   const [plugins, setPlugins] = useState<RecentProject[]>([]);
   const [filteredPlugins, setFilteredPlugins] = useState<RecentProject[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,16 +84,9 @@ export function PluginLibrary({ isOpen, onClose }: PluginLibraryProps) {
 
   const handleLoadPlugin = async (plugin: RecentProject) => {
     try {
-      // Load the project from the file
-      const result = await window.electronAPI.loadProject(plugin.path);
-      if (result.success && result.data) {
-        setProject(result.data);
-        setCurrentFilePath(result.path || null);
-        markClean();
-        onClose();
-      } else {
-        alert(`Failed to load plugin: ${result.error || 'Unknown error'}`);
-      }
+      // Load the project using the store's loadProject function
+      await loadProject(plugin.path);
+      onClose();
     } catch (error: any) {
       console.error('Failed to load plugin:', error);
       alert(`Failed to load plugin: ${error.message || 'Unknown error'}`);
