@@ -279,7 +279,11 @@ export const useProjectStore = create<ProjectState>()(
           ? node.parameters
           : getDefaultParametersForNodeType(node.type);
 
-        const newNode = { ...node, id: nanoid(), parameters };
+        // Ensure inputs and outputs are always defined
+        const inputs = node.inputs || ['input'];
+        const outputs = node.outputs || ['output'];
+
+        const newNode = { ...node, id: nanoid(), parameters, inputs, outputs };
         state.project.dspGraph.nodes.push(newNode);
         state.isDirty = true;
         state.canUndo = historyManager.canUndo();

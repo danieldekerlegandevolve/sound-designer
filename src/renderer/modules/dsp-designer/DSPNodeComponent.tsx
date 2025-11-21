@@ -36,6 +36,10 @@ export function DSPNodeComponent({ id, data, selected }: NodeProps<DSPNode>) {
 
   const color = nodeColors[node.type] || '#64748b';
 
+  // Ensure inputs and outputs are arrays (handle undefined case)
+  const inputs = node.inputs || [];
+  const outputs = node.outputs || [];
+
   return (
     <div
       className={`dsp-node ${selected ? 'selected' : ''}`}
@@ -70,24 +74,24 @@ export function DSPNodeComponent({ id, data, selected }: NodeProps<DSPNode>) {
         )}
       </div>
 
-      {node.inputs.map((input, i) => (
+      {inputs.map((input, i) => (
         <Handle
           key={`in-${i}`}
           type="target"
           position={Position.Left}
           id={input}
-          style={{ top: `${((i + 1) * 100) / (node.inputs.length + 1)}%`, backgroundColor: color }}
+          style={{ top: `${((i + 1) * 100) / (inputs.length + 1)}%`, backgroundColor: color }}
         />
       ))}
 
-      {node.outputs.map((output, i) => (
+      {outputs.map((output, i) => (
         <Handle
           key={`out-${i}`}
           type="source"
           position={Position.Right}
           id={output}
           style={{
-            top: `${((i + 1) * 100) / (node.outputs.length + 1)}%`,
+            top: `${((i + 1) * 100) / (outputs.length + 1)}%`,
             backgroundColor: color,
           }}
         />
