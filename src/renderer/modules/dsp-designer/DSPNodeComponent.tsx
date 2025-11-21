@@ -50,13 +50,13 @@ export function DSPNodeComponent({ id, data, selected }: NodeProps<DSPNode>) {
       </div>
 
       <div className="node-body">
-        {node.parameters.length > 0 ? (
+        {node.parameters && node.parameters.length > 0 ? (
           <div className="node-parameters">
             {node.parameters.slice(0, 3).map((param) => (
               <div key={param.id} className="node-parameter">
                 <span className="param-name">{param.name}</span>
                 <span className="param-value">
-                  {param.value}
+                  {typeof param.value === 'number' ? param.value.toFixed(2) : param.value}
                   {param.unit && ` ${param.unit}`}
                 </span>
               </div>

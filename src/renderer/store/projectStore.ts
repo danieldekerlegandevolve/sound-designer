@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
 import { HistoryManager } from '../utils/HistoryManager';
+import { getDefaultParametersForNodeType } from '../utils/DSPNodeDefaults';
 import type {
   PluginProject,
   UIComponent,
@@ -273,7 +274,12 @@ export const useProjectStore = create<ProjectState>()(
       const { project } = get();
       historyManager.push(project, `Add ${node.type} node`);
       set((state) => {
-        const newNode = { ...node, id: nanoid() };
+        // Add default parameters if not provided
+        const parameters = node.parameters && node.parameters.length > 0
+          ? node.parameters
+          : getDefaultParametersForNodeType(node.type);
+
+        const newNode = { ...node, id: nanoid(), parameters };
         state.project.dspGraph.nodes.push(newNode);
         state.isDirty = true;
         state.canUndo = historyManager.canUndo();
