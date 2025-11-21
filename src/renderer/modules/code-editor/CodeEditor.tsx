@@ -55,12 +55,24 @@ export function CodeEditor() {
   const handleEditorChange = (value: string | undefined) => {
     if (value === undefined) return;
 
+    // Prevent updates during programmatic changes
+    // Only update if the value actually differs from current state
     if (selectedTab === 'helpers') {
-      updateCode('helpers', value);
+      if (value !== project.code.helpers) {
+        updateCode('helpers', value);
+      }
     } else if (selectedTab === 'dsp' && selectedDSPNodeId) {
-      updateDSPNodeCode(selectedDSPNodeId, value);
+      const node = project.dspGraph.nodes.find(n => n.id === selectedDSPNodeId);
+      const currentCode = node?.code || generateDSPNodeCode(node!);
+      if (value !== currentCode) {
+        updateDSPNodeCode(selectedDSPNodeId, value);
+      }
     } else if (selectedTab === 'ui' && selectedUIComponentId) {
-      updateUIComponentCode(selectedUIComponentId, value);
+      const component = project.uiComponents.find(c => c.id === selectedUIComponentId);
+      const currentCode = component?.code || generateUIComponentCode(component!);
+      if (value !== currentCode) {
+        updateUIComponentCode(selectedUIComponentId, value);
+      }
     }
     // Preview is read-only, no updates
   };
@@ -106,6 +118,17 @@ export function CodeEditor() {
     return false;
   };
 
+  // Generate unique key for editor to force remount when switching items
+  const getEditorKey = (): string => {
+    if (selectedTab === 'dsp') {
+      return `dsp-${selectedDSPNodeId || 'none'}`;
+    } else if (selectedTab === 'ui') {
+      return `ui-${selectedUIComponentId || 'none'}`;
+    } else {
+      return selectedTab;
+    }
+  };
+
   const handleDSPNodeClick = (nodeId: string) => {
     setSelectedDSPNodeId(nodeId);
   };
@@ -124,21 +147,26 @@ export function CodeEditor() {
             <h4>DSP Nodes ({project.dspGraph.nodes.length})</h4>
           </div>
           <div className="item-list-content">
-            {project.dspGraph.nodes.map((node) => (
-              <div
-                key={node.id}
-                className={`item-list-item ${selectedDSPNodeId === node.id ? 'active' : ''}`}
-                onClick={() => handleDSPNodeClick(node.id)}
-                title={`Click to edit ${node.label || node.type} code`}
-              >
-                <span className="dsp-color" style={{ backgroundColor: getDSPNodeColor(node.type) }} />
-                <div className="item-info">
-                  <span className="item-name">{node.label || node.type}</span>
-                  <span className="item-type">{node.type}</span>
+            {project.dspGraph.nodes.map((node) => {
+              // Only show checkmark if custom code exists and differs from generated default
+              const hasCustomCode = node.code && node.code.trim().length > 0 &&
+                                   node.code !== generateDSPNodeCode(node);
+              return (
+                <div
+                  key={node.id}
+                  className={`item-list-item ${selectedDSPNodeId === node.id ? 'active' : ''}`}
+                  onClick={() => handleDSPNodeClick(node.id)}
+                  title={`Click to edit ${node.label || node.type} code`}
+                >
+                  <span className="dsp-color" style={{ backgroundColor: getDSPNodeColor(node.type) }} />
+                  <div className="item-info">
+                    <span className="item-name">{node.label || node.type}</span>
+                    <span className="item-type">{node.type}</span>
+                  </div>
+                  {hasCustomCode && <span className="item-badge">✓</span>}
                 </div>
-                {node.code && <span className="item-badge">✓</span>}
-              </div>
-            ))}
+              );
+            })}
             {project.dspGraph.nodes.length === 0 && (
               <div className="empty-message">
                 No DSP nodes yet.<br />
@@ -157,21 +185,26 @@ export function CodeEditor() {
             <h4>UI Components ({project.uiComponents.length})</h4>
           </div>
           <div className="item-list-content">
-            {project.uiComponents.map((comp) => (
-              <div
-                key={comp.id}
-                className={`item-list-item ${selectedUIComponentId === comp.id ? 'active' : ''}`}
-                onClick={() => handleUIComponentClick(comp.id)}
-                title={`Click to edit ${comp.label} code`}
-              >
-                <span className="component-icon">{getUIComponentIcon(comp.type)}</span>
-                <div className="item-info">
-                  <span className="item-name">{comp.label}</span>
-                  <span className="item-type">{comp.type}</span>
+            {project.uiComponents.map((comp) => {
+              // Only show checkmark if custom code exists and differs from generated default
+              const hasCustomCode = comp.code && comp.code.trim().length > 0 &&
+                                   comp.code !== generateUIComponentCode(comp);
+              return (
+                <div
+                  key={comp.id}
+                  className={`item-list-item ${selectedUIComponentId === comp.id ? 'active' : ''}`}
+                  onClick={() => handleUIComponentClick(comp.id)}
+                  title={`Click to edit ${comp.label} code`}
+                >
+                  <span className="component-icon">{getUIComponentIcon(comp.type)}</span>
+                  <div className="item-info">
+                    <span className="item-name">{comp.label}</span>
+                    <span className="item-type">{comp.type}</span>
+                  </div>
+                  {hasCustomCode && <span className="item-badge">✓</span>}
                 </div>
-                {comp.code && <span className="item-badge">✓</span>}
-              </div>
-            ))}
+              );
+            })}
             {project.uiComponents.length === 0 && (
               <div className="empty-message">
                 No UI components yet.<br />
@@ -209,8 +242,12 @@ export function CodeEditor() {
     if (selectedTab === 'preview') {
       const nodeCount = project.dspGraph.nodes.length;
       const componentCount = project.uiComponents.length;
-      const customNodeCodes = project.dspGraph.nodes.filter(n => n.code).length;
-      const customComponentCodes = project.uiComponents.filter(c => c.code).length;
+      const customNodeCodes = project.dspGraph.nodes.filter(n =>
+        n.code && n.code.trim().length > 0 && n.code !== generateDSPNodeCode(n)
+      ).length;
+      const customComponentCodes = project.uiComponents.filter(c =>
+        c.code && c.code.trim().length > 0 && c.code !== generateUIComponentCode(c)
+      ).length;
 
       return `// Plugin Preview (Read-Only)
 //
@@ -256,6 +293,7 @@ export function CodeEditor() {
         <div className="editor-main">
           <div className="editor-container">
             <Editor
+              key={getEditorKey()}
               height="100%"
               language={getEditorLanguage()}
               value={getEditorValue()}
