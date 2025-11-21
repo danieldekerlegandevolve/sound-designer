@@ -1,5 +1,6 @@
 import { PluginProject, UIComponent, DSPNode, DSPParameter } from '@shared/types';
 import { generateDSPNodeCode, generateUIComponentCode } from './IndividualCodeGenerator';
+import { getProcessingOrder } from './TemplateHelpers';
 
 /**
  * Auto-generate DSP processing code based on the DSP graph
@@ -120,8 +121,11 @@ const uiController = new UIController();`;
  * Generate complete plugin preview code
  */
 export function generatePluginPreviewCode(project: PluginProject): string {
-  // Aggregate all DSP node codes
-  const dspNodeCodes = project.dspGraph.nodes
+  // Get nodes in processing order based on connections
+  const orderedNodes = getProcessingOrder(project.dspGraph.nodes, project.dspGraph.connections);
+
+  // Aggregate all DSP node codes in processing order
+  const dspNodeCodes = orderedNodes
     .map((node) => {
       // Use custom code if available, otherwise generate default
       return node.code || generateDSPNodeCode(node);
@@ -138,6 +142,9 @@ export function generatePluginPreviewCode(project: PluginProject): string {
 
   // Include helper functions
   const helperCode = project.code.helpers || '// No helper functions defined';
+
+  // Create node index map for processing chain
+  const nodeIndexMap = new Map(orderedNodes.map((node, idx) => [node.id, idx]));
 
   return `/**
  * ${project.name} - Audio Plugin
@@ -173,8 +180,8 @@ ${helperCode}
 class ${project.name.replace(/\s+/g, '')}AudioProcessor {
   constructor(sampleRate) {
     this.sampleRate = sampleRate;
-    // Initialize all DSP nodes
-${project.dspGraph.nodes.map((node, i) => `    this.node${i} = new ${sanitizeName(node.label || node.type)}${capitalize(node.type)}();`).join('\n') || '    // No nodes to initialize'}
+    // Initialize all DSP nodes in processing order
+${orderedNodes.map((node, i) => `    this.node${i} = new ${sanitizeName(node.label || node.type)}${capitalize(node.type)}();`).join('\n') || '    // No nodes to initialize'}
   }
 
   processBlock(outputs, numSamples, numChannels) {
@@ -182,8 +189,10 @@ ${project.dspGraph.nodes.map((node, i) => `    this.node${i} = new ${sanitizeNam
       for (let ch = 0; ch < numChannels; ch++) {
         let sample = outputs[ch][i];
 
-        // Process through DSP chain
-${project.dspGraph.nodes.map((node, idx) => `        sample = this.node${idx}.process(sample, this.sampleRate);`).join('\n') || '        // No processing'}
+        // Process through DSP chain based on connection order
+${orderedNodes.length > 0
+  ? orderedNodes.map((node, idx) => `        sample = this.node${idx}.process(sample, this.sampleRate);`).join('\n')
+  : '        // No processing'}
 
         outputs[ch][i] = sample;
       }
