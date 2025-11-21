@@ -55,6 +55,8 @@ interface ProjectState {
 
   // Code actions
   updateCode: (type: 'dsp' | 'ui' | 'helpers', code: string) => void;
+  updateDSPNodeCode: (id: string, code: string) => void;
+  updateUIComponentCode: (id: string, code: string) => void;
 
   // History actions
   undo: () => void;
@@ -388,6 +390,22 @@ export const useProjectStore = create<ProjectState>()(
     updateCode: (type, code) => set((state) => {
       state.project.code[type] = code;
       state.isDirty = true;
+    }),
+
+    updateDSPNodeCode: (id, code) => set((state) => {
+      const index = state.project.dspGraph.nodes.findIndex((n) => n.id === id);
+      if (index !== -1) {
+        state.project.dspGraph.nodes[index].code = code;
+        state.isDirty = true;
+      }
+    }),
+
+    updateUIComponentCode: (id, code) => set((state) => {
+      const index = state.project.uiComponents.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        state.project.uiComponents[index].code = code;
+        state.isDirty = true;
+      }
     }),
 
     // History actions
